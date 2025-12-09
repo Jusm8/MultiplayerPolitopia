@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://dy18lyp5mg6xh"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Nombre" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Nombre"
+
+[node name="name_input" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "name"
+
+[node name="IP" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "IP"
+
+[node name="ip_input" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "127.0.0.1"
+
+[node name="Port" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Puerto"
+
+[node name="Port_input" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "7777"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Create_btn" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Crear Partida"
+
+[node name="Join_btn" type="Button" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = " Unirse"
+
+[node name="Label4" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Jugadores en sala"
+
+[node name="Player_List" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Start_btn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Empezar Partida"
+
+[node name="Wait" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Esperando Jugadores"
