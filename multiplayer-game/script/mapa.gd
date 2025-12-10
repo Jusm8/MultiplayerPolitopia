@@ -1,5 +1,7 @@
 extends Node2D
 
+@onready var tile_map: TileMap = $TileMap
+
 const GRID_SIZE := 16
 
 enum Terrain {
@@ -16,6 +18,7 @@ var city_count := 0
 func _ready() -> void:
 	randomize()
 	generate_map()
+	draw_map()
 	_debug_print_map()
 
 func generate_map() -> void:
@@ -35,7 +38,7 @@ func _random_terrain() -> int:
 		# BOSQUE 20%
 		# MONTAÑA 15%
 		# AGUA   10%
-		# CIUDAD  5%
+		# CIUDAD  5% (hasta un máximo de 8)
 		if r < 0.50:
 			return Terrain.CAMPO
 		elif r < 0.70:
@@ -73,3 +76,26 @@ func _debug_print_map() -> void:
 				Terrain.AGUA:    line += "A "
 				Terrain.MONTANIA: line += "M "
 		print(line)
+
+func draw_map() -> void:
+	tile_map.clear()
+	
+	var source_id := 0
+	
+	for y in range(GRID_SIZE):
+		for x in range(GRID_SIZE):
+			var terrain : int= map_data[y][x]
+			var atlas_coords := Vector2i.ZERO
+			
+			match  terrain :
+				Terrain.CAMPO:
+					atlas_coords = Vector2i(0,0)
+				Terrain.BOSQUE:
+					atlas_coords = Vector2i(1,0)
+				Terrain.MONTANIA:
+					atlas_coords = Vector2i(2,0)
+				Terrain.AGUA:
+					atlas_coords = Vector2i(3,0)
+				Terrain.CIUDAD:
+					atlas_coords = Vector2i(4,0)
+			tile_map.set_cell(0, Vector2i(x, y), source_id, atlas_coords)
