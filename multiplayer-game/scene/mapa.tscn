@@ -1,0 +1,47 @@
+[gd_scene load_steps=13 format=3 uid="uid://cuv3wt6wrk1gd"]
+
+[ext_resource type="Script" uid="uid://b63sk50e5dxjs" path="res://script/mapa.gd" id="1_nhjw5"]
+[ext_resource type="Texture2D" uid="uid://bjk1yvfn1at7k" path="res://assets/mapaImg/campo.png" id="2_7pudt"]
+[ext_resource type="Texture2D" uid="uid://u6ip05ddh6wy" path="res://assets/mapaImg/Bosque.png" id="3_10ars"]
+[ext_resource type="Texture2D" uid="uid://dxoccicupnwon" path="res://assets/mapaImg/montania.png" id="4_r2pf6"]
+[ext_resource type="Texture2D" uid="uid://dpjeys46sbeup" path="res://assets/mapaImg/Agua.png" id="5_npqkg"]
+[ext_resource type="Texture2D" uid="uid://bevxrh46st3p5" path="res://assets/mapaImg/ciudad.png" id="6_8ec4r"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ynpjg"]
+texture = ExtResource("2_7pudt")
+0:0/size_in_atlas = Vector2i(4, 4)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_88gl1"]
+texture = ExtResource("3_10ars")
+0:0/size_in_atlas = Vector2i(4, 4)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_p7vuk"]
+texture = ExtResource("4_r2pf6")
+0:0/size_in_atlas = Vector2i(4, 4)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6u765"]
+texture = ExtResource("5_npqkg")
+0:0/size_in_atlas = Vector2i(4, 4)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_uj6bn"]
+texture = ExtResource("6_8ec4r")
+0:0/size_in_atlas = Vector2i(4, 4)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_f52q7"]
+sources/0 = SubResource("TileSetAtlasSource_ynpjg")
+sources/1 = SubResource("TileSetAtlasSource_88gl1")
+sources/3 = SubResource("TileSetAtlasSource_6u765")
+sources/4 = SubResource("TileSetAtlasSource_uj6bn")
+sources/2 = SubResource("TileSetAtlasSource_p7vuk")
+
+[node name="mapa" type="Node2D"]
+script = ExtResource("1_nhjw5")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_f52q7")
+format = 2
