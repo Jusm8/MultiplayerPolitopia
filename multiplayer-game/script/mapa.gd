@@ -19,6 +19,7 @@ func _ready() -> void:
 	randomize()
 	generate_map()
 	draw_map()
+	center_map()
 	_debug_print_map()
 
 func generate_map() -> void:
@@ -83,20 +84,33 @@ func draw_map() -> void:
 	for y in range(GRID_SIZE):
 		for x in range(GRID_SIZE):
 			var terrain: int = map_data[y][x]
-
 			var source_id: int = -1
 
 			match terrain:
 				Terrain.CAMPO:
-					source_id = 1
+					source_id = 0  # Campo.png (ID 0)
 				Terrain.BOSQUE:
-					source_id = 2
+					source_id = 1  # Bosque.png
 				Terrain.MONTANIA:
-					source_id = 3
+					source_id = 2  # Montania.png
 				Terrain.AGUA:
-					source_id = 4
+					source_id = 3  # Agua.png
 				Terrain.CIUDAD:
-					source_id = 5
+					source_id = 4  # Ciudad.png
 
-			# atlas_coords = Vector2i.ZERO porque no usamos atlas, solo tiles sueltos
-			tile_map.set_cell(0, Vector2i(x, y), source_id, Vector2i.ZERO)
+			if source_id != -1:
+				tile_map.set_cell(0, Vector2i(x, y), source_id, Vector2i.ZERO)
+
+func center_map() -> void:
+	# Rectángulo de celdas que estamos usando
+	var used: Rect2i = tile_map.get_used_rect()
+
+	# Convertimos las esquinas del rectángulo de celdas a píxeles (coordenadas locales del TileMap)
+	var top_left: Vector2 = tile_map.map_to_local(used.position)
+	var bottom_right: Vector2 = tile_map.map_to_local(used.position + used.size)
+
+	var map_size: Vector2 = bottom_right - top_left
+	var viewport_size: Vector2 = get_viewport_rect().size
+
+	# Colocamos el TileMap para que el mapa quede centrado
+	tile_map.position = viewport_size * 0.5 - map_size * 0.5 - top_left

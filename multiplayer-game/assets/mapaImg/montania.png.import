@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxoccicupnwon"
-path="res://.godot/imported/montania.png-63255be2d6ac06ff42283cf2b14e54f3.ctex"
+uid="uid://14gopl38oc7h"
+path="res://.godot/imported/Montania.png-5c47a9b87d531193bbcafece87ba019e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/mapaImg/montania.png"
-dest_files=["res://.godot/imported/montania.png-63255be2d6ac06ff42283cf2b14e54f3.ctex"]
+source_file="res://assets/mapaImg/Montania.png"
+dest_files=["res://.godot/imported/Montania.png-5c47a9b87d531193bbcafece87ba019e.ctex"]
 
 [params]
 
