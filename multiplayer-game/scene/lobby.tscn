@@ -15,10 +15,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 472.0
-offset_top = 200.0
-offset_right = 650.0
-offset_bottom = 510.0
+offset_left = 312.0
+offset_top = 96.0
+offset_right = 840.0
+offset_bottom = 556.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -62,6 +62,7 @@ layout_mode = 2
 text = "Jugadores en sala"
 
 [node name="Player_List" type="VBoxContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
 [node name="Start_btn" type="Button" parent="VBoxContainer"]

@@ -9,7 +9,6 @@ extends Control
 @onready var start_btn: Button = $VBoxContainer/Start_btn
 @onready var status_lb: Label = $VBoxContainer/Status_lb
 
-
 var is_host: bool = false
 var max_player: int = 4
 var players:= {} #peer_id nombre
@@ -51,9 +50,9 @@ func _on_host_pressed() -> void:
 	var my_id := multiplayer.get_unique_id()
 	players[my_id] = player_name
 	
-	#
-	#
-	
+	_refresh_player_ui()
+	_broadcast_playes()  
+
 func _on_join_pressed() -> void:
 	var player_name := name_input.text.strip_edges()
 	if player_name == "":
@@ -76,12 +75,12 @@ func _on_join_pressed() -> void:
 	is_host = false
 	status_lb.text = "Conectando a %s:%d..." % [ip, port]
 
-func  _on_connected_to_server() -> void:
+func _on_connected_to_server() -> void:
 	status_lb.text = "Conectando al servidor. Registrando jugador..."
 	var player_name := name_input.text.strip_edges()
-	var my_id := multiplayer.get_unique_id()
-	rpc_id(1, "register_player", my_id, player_name)
-	
+	# El server siempre es el peer 1
+	rpc_id(1, "register_player", player_name)
+
 func _on_connection_failed() -> void:
 	status_lb.text = "Fallo la conexion al servidor"
 
@@ -93,25 +92,35 @@ func _on_server_disconected() -> void:
 	
 func _on_peer_connected(id: int) -> void:
 	if is_host:
-		status_lb.text = "Jugador con el id %d se ha connectado" % id
+		print("Peer conectado con id: ", id)
 
 func _on_peer_disconnected(id: int) -> void:
+	var name := ""
 	if players.has(id):
+		name = str(players[id])
 		players.erase(id)
 		_refresh_player_ui()
 		_broadcast_playes()
-	
-	if is_host:
-		status_lb.text = "Jugador con el id %d se ha desconectado" % id
 
-@rpc("authority")
-func register_player(id: int, name: String) -> void:
+	if is_host:
+		if name == "":
+			status_lb.text = "Un jugador se ha desconectado"
+		else:
+			status_lb.text = "Jugador %s se ha desconectado" % name
+
+@rpc("any_peer")
+func register_player(name: String) -> void:
+	# Id del que ha enviado el RPC
+	var id := multiplayer.get_remote_sender_id()
+
 	if players.size() >= max_player:
 		return
-	
+
 	players[id] = name
+	status_lb.text = "Jugador %s se ha conectado" % name
+
 	_broadcast_playes()
-	
+
 func _broadcast_playes() -> void:
 	var names := []
 	for id in players.keys():
