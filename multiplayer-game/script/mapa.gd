@@ -79,23 +79,24 @@ func _debug_print_map() -> void:
 
 func draw_map() -> void:
 	tile_map.clear()
-	
-	var source_id := 0
-	
+
 	for y in range(GRID_SIZE):
 		for x in range(GRID_SIZE):
-			var terrain : int= map_data[y][x]
-			var atlas_coords := Vector2i.ZERO
-			
-			match  terrain :
+			var terrain: int = map_data[y][x]
+
+			var source_id: int = -1
+
+			match terrain:
 				Terrain.CAMPO:
-					atlas_coords = Vector2i(0,0)
+					source_id = 1
 				Terrain.BOSQUE:
-					atlas_coords = Vector2i(1,0)
+					source_id = 2
 				Terrain.MONTANIA:
-					atlas_coords = Vector2i(2,0)
+					source_id = 3
 				Terrain.AGUA:
-					atlas_coords = Vector2i(3,0)
+					source_id = 4
 				Terrain.CIUDAD:
-					atlas_coords = Vector2i(4,0)
-			tile_map.set_cell(0, Vector2i(x, y), source_id, atlas_coords)
+					source_id = 5
+
+			# atlas_coords = Vector2i.ZERO porque no usamos atlas, solo tiles sueltos
+			tile_map.set_cell(0, Vector2i(x, y), source_id, Vector2i.ZERO)
