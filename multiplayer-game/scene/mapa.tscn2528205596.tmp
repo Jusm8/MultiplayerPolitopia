@@ -52,3 +52,8 @@ format = 2
 
 [node name="Camera" type="Camera2D" parent="."]
 script = ExtResource("7_10ars")
+zoom_min = null
+zoom_max = null
+zoom_speed = null
+pan_speed = null
+pan_limit_rect = null
