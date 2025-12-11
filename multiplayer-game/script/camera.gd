@@ -20,9 +20,9 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	# Zoom con rueda
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-		zoom = Vector2.ONE * clamp(zoom.x - zoom_speed, zoom_min, zoom_max)
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 		zoom = Vector2.ONE * clamp(zoom.x + zoom_speed, zoom_min, zoom_max)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+		zoom = Vector2.ONE * clamp(zoom.x - zoom_speed, zoom_min, zoom_max)
 
 	# Drag con botón derecho
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
