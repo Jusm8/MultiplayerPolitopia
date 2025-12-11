@@ -52,3 +52,53 @@ format = 2
 
 [node name="Camera" type="Camera2D" parent="."]
 script = ExtResource("7_10ars")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TopBar" type="Panel" parent="HUD"]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/TopBar"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LabelCurrentPlayer" type="Label" parent="HUD/TopBar/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/TopBar/VBoxContainer"]
+layout_mode = 2
+
+[node name="LabelCities" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelWood" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelStone" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelRound" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="HUD/TopBar"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/TopBar/PanelContainer"]
+layout_mode = 2
+
+[node name="LabelTitleInfo" type="Label" parent="HUD/TopBar/PanelContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="ActionsContainer" type="HBoxContainer" parent="HUD/TopBar/PanelContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="EndTurnBtn" type="Button" parent="HUD/TopBar"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[node name="ConfirmEndTurnDialog" type="ConfirmationDialog" parent="HUD/TopBar"]
