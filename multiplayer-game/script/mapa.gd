@@ -203,14 +203,20 @@ func end_turn() -> void:
 	rpc("sync_turn", current_player_id, current_turn_index)
 
 @rpc("any_peer", "call_local")
-func sync_map_and_turns(remote_map_data: Array, remote_player_cities: Dictionary, remote_turn_order: Array, remote_current_turn_index: int) -> void:
+func sync_map_and_turns(
+		remote_map_data: Array,
+		remote_player_cities: Dictionary,
+		remote_turn_order: Array,
+		remote_current_turn_index: int
+	) -> void:
+
 	# Si viene vacío, no hacemos nada para evitar crasheos
 	if remote_map_data.is_empty():
 		push_warning("sync_map_and_turns: remote_map_data está vacío, no sincronizo.")
 		return
 
-	# Copiamos datos del mapa
-	map_data.clear()
+	# Copiamos datos del mapa (¡sin usar clear!, creamos un array nuevo)
+	map_data = []
 	for row in remote_map_data:
 		map_data.append(row.duplicate())
 
@@ -232,7 +238,6 @@ func sync_map_and_turns(remote_map_data: Array, remote_player_cities: Dictionary
 
 	if turn_order.is_empty():
 		push_warning("sync_map_and_turns: turn_order vacío, no puedo establecer jugador actual.")
-
 	else:
 		current_player_id = turn_order[current_turn_index]
 		_update_local_turn()
