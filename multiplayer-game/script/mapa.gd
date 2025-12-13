@@ -2,9 +2,11 @@ extends Node2D
 
 @onready var tile_map: TileMap = $TileMap
 @onready var camera: Camera2D = $Camera2D
+@onready var hud: CanvasLayer = $HUD
 
 const GRID_SIZE := 16
 
+var round_number: int = 1
 var player_ids: Array[int] = [] # se rellena desde GameData
 var player_cities: Dictionary = {}  # player_id -> Vector2i
 
@@ -33,6 +35,8 @@ func _ready() -> void:
 
 	player_ids = GameData.get_player_ids()
 	print("Player IDs en mapa: ", player_ids)
+	
+	hud.end_turn_confirmed.connect(_on_hud_end_turn_confirmed)
 
 	if multiplayer.is_server():
 		print("SERVER: player_ids = ", player_ids)
@@ -46,6 +50,9 @@ func _ready() -> void:
 			return
 
 		rpc("sync_map_and_turns", map_data, player_cities, turn_order, current_turn_index)
+
+func _on_hud_end_turn_confirmed() -> void:
+	end_turn()
 
 func generate_map() -> void:
 	map_data.clear()
@@ -175,8 +182,8 @@ func start_turns() -> void:
 	turn_order = player_ids.duplicate()
 	turn_order.shuffle()
 	current_turn_index = 0
+	round_number = 1
 	_set_active_player(turn_order[current_turn_index])
-
 
 func _set_active_player(player_id: int) -> void:
 	current_player_id = player_id
@@ -189,6 +196,22 @@ func _update_local_turn() -> void:
 	is_my_turn = (my_id == current_player_id)
 	print("Jugador ", my_id, " → es mi turno? ", is_my_turn)
 
+	# Nombre del jugador actual (desde GameData)
+	var current_name := ""
+	if GameData.players.has(current_player_id):
+		current_name = str(GameData.players[current_player_id])
+	else:
+		current_name = "Jugador %s" % str(current_player_id)
+
+	var cities := _get_city_count_for_player(current_player_id)
+	var wood := 0
+	var stone := 0
+
+	hud.set_current_player(current_name, is_my_turn)
+	hud.set_round(round_number)
+	hud.set_player_stats(cities, wood, stone)
+
+
 func end_turn() -> void:
 	if not multiplayer.is_server():
 		# En clientes, pedimos al servidor que pase turno
@@ -197,10 +220,15 @@ func end_turn() -> void:
 
 	# SOLO servidor llega aquí
 	current_turn_index = (current_turn_index + 1) % turn_order.size()
+
+	# si volvemos al primer jugador, nueva ronda
+	if current_turn_index == 0:
+		round_number += 1
+
 	_set_active_player(turn_order[current_turn_index])
 
-	# Avisamos a todos del nuevo jugador activo
-	rpc("sync_turn", current_player_id, current_turn_index)
+	# Avisamos a todos del nuevo jugador activo y la ronda
+	rpc("sync_turn", current_player_id, current_turn_index, round_number)
 
 @rpc("any_peer", "call_local")
 func sync_map_and_turns(
@@ -258,9 +286,10 @@ func request_end_turn() -> void:
 
 
 @rpc("any_peer", "call_local")
-func sync_turn(new_player_id: int, new_turn_index: int) -> void:
+func sync_turn(new_player_id: int, new_turn_index: int, new_round: int) -> void:
 	current_player_id = new_player_id
 	current_turn_index = new_turn_index
+	round_number = new_round
 	_update_local_turn()
 	_focus_camera_on_my_city()
 
