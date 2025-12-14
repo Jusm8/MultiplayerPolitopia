@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cuv3wt6wrk1gd"]
+[gd_scene load_steps=16 format=3 uid="uid://cuv3wt6wrk1gd"]
 
 [ext_resource type="Script" uid="uid://b63sk50e5dxjs" path="res://script/mapa.gd" id="1_nhjw5"]
 [ext_resource type="Texture2D" uid="uid://c7shwkold5npr" path="res://assets/mapaImg/Bosque.png" id="3_10ars"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://14gopl38oc7h" path="res://assets/mapaImg/Montania.png" id="6_r2pf6"]
 [ext_resource type="Script" uid="uid://cg77nl5xilu14" path="res://script/camera.gd" id="7_10ars"]
 [ext_resource type="Script" uid="uid://20l5svnbesmy" path="res://script/hud.gd" id="8_r2pf6"]
+[ext_resource type="Texture2D" uid="uid://b4vskhtyxw33g" path="res://icon.svg" id="9_npqkg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7pudt"]
 texture = ExtResource("4_7pudt")
@@ -58,13 +59,14 @@ script = ExtResource("7_10ars")
 script = ExtResource("8_r2pf6")
 
 [node name="TopBar" type="Panel" parent="HUD"]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 1152.0
+offset_bottom = 64.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HUD/TopBar"]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_top = -64.0
+offset_right = 448.0
+offset_bottom = 192.0
 
 [node name="LabelCurrentPlayer" type="Label" parent="HUD/TopBar/VBoxContainer"]
 layout_mode = 2
@@ -99,9 +101,15 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="EndTurnBtn" type="Button" parent="HUD/TopBar"]
-layout_mode = 0
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.8472222
+anchor_top = 7.375
+anchor_right = 0.9583333
+anchor_bottom = 9.375
 offset_right = 8.0
 offset_bottom = 8.0
+icon = ExtResource("9_npqkg")
 metadata/_edit_use_anchors_ = true
 
 [node name="ConfirmEndTurnDialog" type="ConfirmationDialog" parent="HUD/TopBar"]

@@ -2,7 +2,7 @@ extends Node2D
 
 @onready var tile_map: TileMap = $TileMap
 @onready var camera: Camera2D = $Camera2D
-@onready var hud: CanvasLayer = $HUD
+@onready var hud: = $HUD
 
 const GRID_SIZE := 16
 
@@ -174,6 +174,15 @@ func assign_cities_to_players() -> void:
 
 	print("Ciudades por jugador: ", player_cities)
 
+func _get_city_count_for_player(player_id: int) -> int:
+	var count := 0
+
+	for owner_id in player_cities.keys():
+		if owner_id == player_id:
+			count += 1
+
+	return count
+
 func start_turns() -> void:
 	if player_ids.is_empty():
 		push_warning("No hay jugadores para los turnos.")
@@ -203,7 +212,7 @@ func _update_local_turn() -> void:
 	else:
 		current_name = "Jugador %s" % str(current_player_id)
 
-	var cities := _get_city_count_for_player(current_player_id)
+	var cities : int = _get_city_count_for_player(current_player_id)
 	var wood := 0
 	var stone := 0
 
@@ -303,3 +312,20 @@ func _focus_camera_on_my_city() -> void:
 	var world_pos: Vector2 = tile_map.map_to_local(cell)
 	# Como la cámara es hija de mapa, están en el mismo espacio
 	camera.position = world_pos
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_my_turn:
+		return
+
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		var local_pos := tile_map.to_local(event.position)
+		var cell := tile_map.local_to_map(local_pos)
+
+		# comprobar que está dentro del mapa
+		if cell.y < 0 or cell.y >= map_data.size():
+			return
+		if cell.x < 0 or cell.x >= map_data[cell.y].size():
+			return
+
+		var terrain : int = map_data[cell.y][cell.x]
+		hud.set_selected_tile(cell, terrain)
