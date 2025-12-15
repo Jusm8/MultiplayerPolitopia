@@ -109,37 +109,41 @@ func _on_peer_disconnected(id: int) -> void:
 			status_lb.text = "Jugador %s se ha desconectado" % name
 
 @rpc("any_peer")
-func register_player(name: String) -> void:
-	# Id del que ha enviado el RPC
+func register_player(player_name: String) -> void:
 	var id := multiplayer.get_remote_sender_id()
 
 	if players.size() >= max_player:
 		return
 
-	players[id] = name
-	status_lb.text = "Jugador %s se ha conectado" % name
+	players[id] = player_name
+	status_lb.text = "Jugador %s se ha conectado" % player_name
 
 	_broadcast_playes()
 
 func _broadcast_playes() -> void:
 	var names := []
+	GameData.players = players.duplicate()
+
 	for id in players.keys():
 		names.append(players[id])
-	rpc("sync_players", names)
+	rpc("sync_players", players)
 
 @rpc("any_peer", "call_local")
-func sync_players(names: Array) -> void:
-	# Limpiamos lista visual
+func sync_players(p: Dictionary) -> void:
+	# Actualizamos diccionario local en TODOS los peers
+	players = p.duplicate()
+	GameData.players = players.duplicate()
+
+	# Reconstruimos la lista visual con los nombres
 	for child in player_list.get_children():
 		child.queue_free()
 
-	for name in names:
+	for id in players.keys():
 		var label := Label.new()
-		label.text = str(name)
+		label.text = str(players[id])
 		player_list.add_child(label)
 
-	# Controlar botón de empezar:
-	var count := names.size()
+	var count := players.size()
 	start_btn.disabled = not (is_host and count >= 2 and count <= max_player)
 
 func _refresh_player_ui() -> void:
@@ -159,8 +163,10 @@ func _on_start_pressed() -> void:
 	if not is_host:
 		return
 	status_lb.text = "Empezando partida..."
-	rpc("start_game")
+	rpc("start_game")  # avisa a todos
+
 
 @rpc("any_peer", "call_local")
 func start_game() -> void:
-	status_lb.text = "Aquí iría el cambio a la escena de juego."
+	# Cambiar a la escena del mapa en todos los peers
+	get_tree().change_scene_to_file("res://scene/mapa.tscn")

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjk1yvfn1at7k"
-path="res://.godot/imported/campo.png-5a0fcd2374a998d274429fcd9852b61b.ctex"
+uid="uid://doibhahekq8tt"
+path="res://.godot/imported/Campo.png-3f0b6d4ba22fb23dd4b9b25c57caf43c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/mapaImg/campo.png"
-dest_files=["res://.godot/imported/campo.png-5a0fcd2374a998d274429fcd9852b61b.ctex"]
+source_file="res://assets/mapaImg/Campo.png"
+dest_files=["res://.godot/imported/Campo.png-3f0b6d4ba22fb23dd4b9b25c57caf43c.ctex"]
 
 [params]
 
