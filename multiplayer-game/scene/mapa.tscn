@@ -51,6 +51,7 @@ script = ExtResource("1_nhjw5")
 [node name="TileMap" type="TileMap" parent="."]
 tile_set = SubResource("TileSet_f52q7")
 format = 2
+layer_1/name = "Layer1"
 
 [node name="Camera" type="Camera2D" parent="."]
 script = ExtResource("7_10ars")
@@ -60,13 +61,14 @@ script = ExtResource("8_r2pf6")
 
 [node name="TopBar" type="Panel" parent="HUD"]
 offset_right = 1152.0
-offset_bottom = 64.0
+offset_bottom = 136.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HUD/TopBar"]
 layout_mode = 0
-offset_top = -64.0
-offset_right = 448.0
-offset_bottom = 192.0
+offset_left = 376.0
+offset_top = 8.0
+offset_right = 824.0
+offset_bottom = 72.0
 
 [node name="LabelCurrentPlayer" type="Label" parent="HUD/TopBar/VBoxContainer"]
 layout_mode = 2
@@ -103,10 +105,10 @@ layout_mode = 2
 [node name="EndTurnBtn" type="Button" parent="HUD/TopBar"]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.8472222
-anchor_top = 7.375
-anchor_right = 0.9583333
-anchor_bottom = 9.375
+anchor_left = 0.8541667
+anchor_top = 3.5882354
+anchor_right = 0.9652778
+anchor_bottom = 4.529412
 offset_right = 8.0
 offset_bottom = 8.0
 icon = ExtResource("9_npqkg")

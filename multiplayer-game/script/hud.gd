@@ -27,9 +27,10 @@ func _on_end_turn_button_pressed() -> void:
 func _on_confirmed() -> void:
 	end_turn_confirmed.emit()
 
-func set_current_player(player_name: String, my_turn: bool) -> void:
-	label_current_player.text = "Turno: %s" % player_name
-	label_current_player.modulate = Color.WHITE if my_turn else Color(0.8, 0.8, 0.8)
+func set_current_player(name: String, is_my_turn: bool) -> void:
+	label_current_player.text = "Turno: %s" % name
+	label_current_player.modulate = Color.WHITE if is_my_turn else Color(0.8, 0.8, 0.8)
+	end_turn_btn.disabled = not is_my_turn
 
 func set_round(round_number: int) -> void:
 	label_round.text = "Ronda: %d" % round_number

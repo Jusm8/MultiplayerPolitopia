@@ -1,15 +1,14 @@
 extends Node2D
 
 @onready var tile_map: TileMap = $TileMap
-@onready var camera: Camera2D = $Camera2D
-@onready var hud: = $HUD
+@onready var camera: Camera2D = $Camera
+@onready var hud: CanvasLayer = $HUD
 
 const GRID_SIZE := 16
 
 var round_number: int = 1
 var player_ids: Array[int] = [] # se rellena desde GameData
 var player_cities: Dictionary = {}  # player_id -> Vector2i
-
 
 enum Terrain {
 	CAMPO,
@@ -29,6 +28,21 @@ var current_turn_index: int = 0
 var current_player_id: int = -1
 var is_my_turn: bool = false
 
+# Recursos por jugador
+var player_resources := {} # player_id -> "wood: int, "stone": int}
+
+# Produccion por turno (modificable para cada partida)
+var player_income := {} # player_id-> {"wood": int, "stone": int}
+
+const DEFAULT_WOOD_INCOME := 10
+const DEFAULT_STONE_INCOME:= 5
+
+var unit_db:= [
+	{"name":"Soldado", "hp":10, "dmg":5, "desc":""},
+	{"name":"General", "hp":25, "dmg":8, "desc":""},
+	{"name":"Arquero", "hp":10, "dmg":5, "desc":""},
+	{"name":"Tanque", "hp":55, "dmg":10, "desc":""}
+]
 
 func _ready() -> void:
 	randomize()
@@ -43,13 +57,22 @@ func _ready() -> void:
 		generate_map()
 		assign_cities_to_players()
 		start_turns()
+		_init_player_economy()
+		
+		# Enviar todo a los clientes
+		rpc("sync_map_and_turns", map_data, player_cities, turn_order, current_turn_index)
+		rpc("sync_economy", player_resources, player_income, round_number)
+
 		print("SERVER: turn_order = ", turn_order)
+
+		draw_map()
+		center_map()
+		_debug_print_map()
+		_focus_camera_on_my_city()
 
 		if turn_order.is_empty():
 			push_warning("SERVER: turn_order está vacío, no envío RPC")
 			return
-
-		rpc("sync_map_and_turns", map_data, player_cities, turn_order, current_turn_index)
 
 func _on_hud_end_turn_confirmed() -> void:
 	end_turn()
@@ -69,7 +92,6 @@ func generate_map() -> void:
 				city_positions.append(Vector2i(x, y))
 
 	print("Ciudades generadas: ", city_count, " / posiciones: ", city_positions.size())
-
 
 func _random_terrain() -> int:
 	var r := randf()
@@ -157,7 +179,6 @@ func center_map() -> void:
 
 	tile_map.position = viewport_size * 0.5 - map_size * 0.5 - top_left
 
-
 func assign_cities_to_players() -> void:
 	if city_positions.size() < player_ids.size():
 		push_warning("No hay suficientes ciudades para todos los jugadores.")
@@ -199,7 +220,6 @@ func _set_active_player(player_id: int) -> void:
 	# en multijugador real el host haría rpc("sync_turn", current_player_id)
 	_update_local_turn()
 
-
 func _update_local_turn() -> void:
 	var my_id := multiplayer.get_unique_id()
 	is_my_turn = (my_id == current_player_id)
@@ -213,31 +233,36 @@ func _update_local_turn() -> void:
 		current_name = "Jugador %s" % str(current_player_id)
 
 	var cities : int = _get_city_count_for_player(current_player_id)
-	var wood := 0
-	var stone := 0
+	var wood: int = 0
+	var stone: int = 0
+	if player_resources.has(current_player_id):
+		wood = int(player_resources[current_player_id]["wood"])
+		stone = int(player_resources[current_player_id]["stone"])
 
 	hud.set_current_player(current_name, is_my_turn)
 	hud.set_round(round_number)
 	hud.set_player_stats(cities, wood, stone)
 
-
 func end_turn() -> void:
 	if not multiplayer.is_server():
-		# En clientes, pedimos al servidor que pase turno
 		rpc_id(1, "request_end_turn")
 		return
 
-	# SOLO servidor llega aquí
-	current_turn_index = (current_turn_index + 1) % turn_order.size()
+	# Solo puede pasar turno el jugador al que le toca
+	var sender := multiplayer.get_remote_sender_id()
+	if sender != 0 and sender != current_player_id:
+		return
 
-	# si volvemos al primer jugador, nueva ronda
+	_apply_end_turn_income(current_player_id)
+
+	current_turn_index = (current_turn_index + 1) % turn_order.size()
 	if current_turn_index == 0:
 		round_number += 1
 
 	_set_active_player(turn_order[current_turn_index])
 
-	# Avisamos a todos del nuevo jugador activo y la ronda
 	rpc("sync_turn", current_player_id, current_turn_index, round_number)
+	rpc("sync_economy", player_resources, player_income, round_number)
 
 @rpc("any_peer", "call_local")
 func sync_map_and_turns(
@@ -290,9 +315,10 @@ func request_end_turn() -> void:
 	# Solo el host hace caso
 	if not multiplayer.is_server():
 		return
-
+	var sender := multiplayer.get_remote_sender_id()
+	if sender != current_player_id:
+		return # si no es su turno fuera
 	end_turn()  # Llama a la versión "server" de arriba
-
 
 @rpc("any_peer", "call_local")
 func sync_turn(new_player_id: int, new_turn_index: int, new_round: int) -> void:
@@ -329,3 +355,25 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		var terrain : int = map_data[cell.y][cell.x]
 		hud.set_selected_tile(cell, terrain)
+
+func _init_player_economy() -> void:
+	player_resources.clear()
+	player_income.clear()
+	
+	for pid in player_ids:
+		player_resources[pid] = {"wood": 0, "stone": 0}
+		player_income[pid] = {"wood": DEFAULT_WOOD_INCOME, "stone": DEFAULT_STONE_INCOME}
+
+@rpc("any_peer", "call_local")
+func sync_economy(remote_resources: Dictionary, remote_income: Dictionary, remote_round: int) -> void:
+	player_resources = remote_resources.duplicate(true)
+	player_income = remote_income.duplicate(true)
+	round_number = remote_round
+	_update_local_turn() # refresca HUD con los valores actuales
+
+func _apply_end_turn_income(player_id: int) -> void:
+	if not player_resources.has(player_id) or not player_income.has(player_id):
+		return
+
+	player_resources[player_id]["wood"] += int(player_income[player_id]["wood"])
+	player_resources[player_id]["stone"] += int(player_income[player_id]["stone"])

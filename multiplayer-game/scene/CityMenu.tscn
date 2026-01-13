@@ -1,0 +1,75 @@
+[gd_scene load_steps=2 format=3 uid="uid://3abew6xy87gd"]
+
+[ext_resource type="Script" uid="uid://c5w7qmskabhu" path="res://script/city_menu.gd" id="1_yr66a"]
+
+[node name="HUD" type="CanvasLayer"]
+
+[node name="CityMenu" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 320.0
+offset_top = 90.0
+offset_right = 835.0
+offset_bottom = 554.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+script = ExtResource("1_yr66a")
+
+[node name="Panel" type="Panel" parent="CityMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CityMenu/Panel"]
+layout_mode = 0
+offset_right = 512.0
+offset_bottom = 286.0
+
+[node name="UnitGrid" type="GridContainer" parent="CityMenu/Panel/HBoxContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="Info" type="VBoxContainer" parent="CityMenu/Panel/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelName" type="Label" parent="CityMenu/Panel/HBoxContainer/Info"]
+layout_mode = 2
+
+[node name="LabelStats" type="Label" parent="CityMenu/Panel/HBoxContainer/Info"]
+layout_mode = 2
+
+[node name="LabelDesc" type="Label" parent="CityMenu/Panel/HBoxContainer/Info"]
+layout_mode = 2
+
+[node name="LabelCost" type="Label" parent="CityMenu/Panel/HBoxContainer/Info"]
+layout_mode = 2
+
+[node name="BottomBar" type="HBoxContainer" parent="CityMenu/Panel"]
+layout_mode = 0
+offset_top = 422.0
+offset_right = 515.0
+offset_bottom = 462.0
+
+[node name="BtnClose" type="Button" parent="CityMenu/Panel/BottomBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7490196, 0, 0.21568628, 1)
+text = "Close
+"
+
+[node name="BtnBuy" type="Button" parent="CityMenu/Panel/BottomBar"]
+layout_direction = 3
+layout_mode = 2
+theme_override_colors/font_color = Color(0.19815946, 0.5357092, 0.31466636, 1)
+theme_override_colors/font_focus_color = Color(0.5678726, 0.09500661, 0.58928937, 1)
+text = "BUY"
+
+[node name="Centrado" type="Button" parent="."]
+visible = false
+offset_left = 568.0
+offset_top = 312.0
+offset_right = 584.0
+offset_bottom = 328.0
