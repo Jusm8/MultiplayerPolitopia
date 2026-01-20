@@ -1,5 +1,5 @@
 extends CanvasLayer
-
+class_name HUD
 signal end_turn_confirmed
 
 @onready var label_current_player: Label = $TopBar/VBoxContainer/LabelCurrentPlayer

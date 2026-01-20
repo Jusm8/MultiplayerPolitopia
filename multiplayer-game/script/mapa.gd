@@ -2,7 +2,8 @@ extends Node2D
 
 @onready var tile_map: TileMap = $TileMap
 @onready var camera: Camera2D = $Camera
-@onready var hud: CanvasLayer = $HUD
+@onready var hud: HUD = $HUD
+@onready var city_menu: CityMenu = $HUD/CityMenu
 
 const GRID_SIZE := 16
 
@@ -37,18 +38,26 @@ var player_income := {} # player_id-> {"wood": int, "stone": int}
 const DEFAULT_WOOD_INCOME := 10
 const DEFAULT_STONE_INCOME:= 5
 
-var unit_db:= [
-	{"name":"Soldado", "hp":10, "dmg":5, "desc":""},
-	{"name":"General", "hp":25, "dmg":8, "desc":""},
-	{"name":"Arquero", "hp":10, "dmg":5, "desc":""},
-	{"name":"Tanque", "hp":55, "dmg":10, "desc":""}
+var unit_db:Array[Dictionary]= [
+	{"name":"Soldado", "hp":10, "dmg":5, "desc":"", "wood_cost":10, "stone_cost": 5},
+	{"name":"General", "hp":25, "dmg":8, "desc":"", "wood_cost":20, "stone_cost": 10},
+	{"name":"Arquero", "hp":10, "dmg":5, "desc":"", "wood_cost":10, "stone_cost": 5},
+	{"name":"Tanque", "hp":55, "dmg":10, "desc":"", "wood_cost":50, "stone_cost":40}
 ]
+
+# city_key -> true (compró ya este turno)
+var city_bought_this_turn: Dictionary = {}
 
 func _ready() -> void:
 	randomize()
 
 	player_ids = GameData.get_player_ids()
 	print("Player IDs en mapa: ", player_ids)
+	if city_menu == null:
+		push_error("CityMenu no esta instanciado en HUD")
+		return
+	city_menu.buy_requested.connect(_on_city_menu_buy_requested)
+	city_menu.closed.connect(_on_city_menu_closed)
 	
 	hud.end_turn_confirmed.connect(_on_hud_end_turn_confirmed)
 
@@ -260,6 +269,8 @@ func end_turn() -> void:
 		round_number += 1
 
 	_set_active_player(turn_order[current_turn_index])
+	if multiplayer.is_server():
+		_on_new_turn_started()
 
 	rpc("sync_turn", current_player_id, current_turn_index, round_number)
 	rpc("sync_economy", player_resources, player_income, round_number)
@@ -344,17 +355,47 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		var local_pos := tile_map.to_local(event.position)
-		var cell := tile_map.local_to_map(local_pos)
+		# 1) mundo (con cámara ya aplicada)
+		var world_pos: Vector2 = get_global_mouse_position()
 
-		# comprobar que está dentro del mapa
+		# 2) mundo -> local del tilemap
+		var local_pos: Vector2 = tile_map.to_local(world_pos)
+
+		# 3) local -> celda del tilemap
+		var cell: Vector2i = tile_map.local_to_map(local_pos)
+
+		# 4) validar dentro del array
 		if cell.y < 0 or cell.y >= map_data.size():
 			return
 		if cell.x < 0 or cell.x >= map_data[cell.y].size():
 			return
 
-		var terrain : int = map_data[cell.y][cell.x]
+		var terrain: int = int(map_data[cell.y][cell.x])
+
+		# filtro rombo iso
+		if not _is_point_inside_iso_cell(local_pos, cell):
+			return
+
 		hud.set_selected_tile(cell, terrain)
+
+		if terrain == Terrain.CIUDAD:
+			_open_city_menu(cell)
+
+
+func _is_point_inside_iso_cell(local_pos: Vector2, cell: Vector2i) -> bool:
+	# Posición local del centro de la celda
+	var cell_local: Vector2 = tile_map.map_to_local(cell)
+
+	# Offset del punto respecto al centro de la celda
+	var d: Vector2 = local_pos - cell_local
+
+	# Tamaño del tile (en píxeles) -> saca el tile_size del TileSet del TileMap
+	var ts: Vector2i = tile_map.tile_set.tile_size
+	var hw := float(ts.x) * 0.5
+	var hh := float(ts.y) * 0.5
+
+	# Ecuación del rombo isométrico: |x/hw| + |y/hh| <= 1
+	return (abs(d.x) / hw + abs(d.y) / hh) <= 1.0
 
 func _init_player_economy() -> void:
 	player_resources.clear()
@@ -377,3 +418,91 @@ func _apply_end_turn_income(player_id: int) -> void:
 
 	player_resources[player_id]["wood"] += int(player_income[player_id]["wood"])
 	player_resources[player_id]["stone"] += int(player_income[player_id]["stone"])
+
+func _city_key(cell: Vector2i) -> String:
+	return "%d,%d" % [cell.x, cell.y]
+
+func _on_new_turn_started() -> void:
+	if multiplayer.is_server():
+		city_bought_this_turn.clear()
+		rpc("sync_city_bought", city_bought_this_turn)
+
+func _open_city_menu(cell: Vector2i) -> void:
+	var my_id := multiplayer.get_unique_id()
+
+	# (Opcional) si quieres solo poder comprar en TU ciudad:
+	if not player_cities.has(my_id) or player_cities[my_id] != cell:
+		return
+
+	var wood := int(player_resources.get(my_id, {"wood": 0})["wood"])
+	var stone := int(player_resources.get(my_id, {"stone": 0})["stone"])
+
+	var key := _city_key(cell)
+	var can_buy_here := not city_bought_this_turn.has(key)
+
+	city_menu.open_for_city(cell, unit_db, wood, stone, can_buy_here)
+
+func _on_city_menu_buy_requested(city_cell: Vector2i, unit_id: int) -> void:
+	if not is_my_turn:
+		return
+
+	# Pedimos al servidor que haga la compra (NUNCA la hagas solo en cliente)
+	rpc_id(1, "request_buy_unit", city_cell, unit_id)
+
+func _on_city_menu_closed() -> void:
+	pass
+
+@rpc("any_peer")
+func request_buy_unit(city_cell: Vector2i, unit_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+
+	var sender := multiplayer.get_remote_sender_id()
+
+	# Solo el jugador del turno puede comprar
+	if sender != current_player_id:
+		return
+
+	# Solo si es ciudad
+	if city_cell.y < 0 or city_cell.y >= map_data.size():
+		return
+	if city_cell.x < 0 or city_cell.x >= map_data[city_cell.y].size():
+		return
+	if int(map_data[city_cell.y][city_cell.x]) != Terrain.CIUDAD:
+		return
+
+	# Una compra por ciudad y por turno
+	var key := _city_key(city_cell)
+	if city_bought_this_turn.has(key):
+		return
+
+	# Unit id válido
+	if unit_id < 0 or unit_id >= unit_db.size():
+		return
+	var u: Dictionary = unit_db[unit_id]
+
+	var wood_cost := int(u.get("wood_cost", 0))
+	var stone_cost := int(u.get("stone_cost", 0))
+
+	# Recursos suficientes
+	if not player_resources.has(sender):
+		return
+	var wood := int(player_resources[sender]["wood"])
+	var stone := int(player_resources[sender]["stone"])
+	if wood < wood_cost or stone < stone_cost:
+		return
+
+	# Descontar recursos
+	player_resources[sender]["wood"] = wood - wood_cost
+	player_resources[sender]["stone"] = stone - stone_cost
+
+	# Marcar ciudad como comprada este turno
+	city_bought_this_turn[key] = true
+
+	# Aquí más adelante instanciarías la tropa en el mapa, por ahora solo confirmamos.
+	rpc("sync_economy", player_resources, player_income, round_number)
+	rpc("sync_city_bought", city_bought_this_turn)
+
+@rpc("any_peer", "call_local")
+func sync_city_bought(remote_dict: Dictionary) -> void:
+	city_bought_this_turn = remote_dict.duplicate(true)
