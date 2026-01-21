@@ -32,6 +32,7 @@ format = 2
 layer_1/name = "Layer1"
 
 [node name="Camera" type="Camera2D" parent="."]
+position = Vector2(640, 360)
 script = ExtResource("7_10ars")
 
 [node name="HUD" type="CanvasLayer" parent="."]
