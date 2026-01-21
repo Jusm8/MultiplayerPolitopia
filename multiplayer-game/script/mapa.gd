@@ -18,6 +18,17 @@ enum Terrain {
 	AGUA,
 	MONTANIA,
 }
+var atlas_source_id: int = -1
+var atlas_source: TileSetAtlasSource
+
+const ATLAS_SOURCE_ID := 0
+const  TERRAIN_ATLAS := {
+	Terrain.CAMPO: Vector2i(1, 0),
+	Terrain.BOSQUE: Vector2i(2, 0),
+	Terrain.AGUA: Vector2i(3, 0),
+	Terrain.CIUDAD: Vector2i(4, 0),
+	Terrain.MONTANIA: Vector2i(5, 0),
+}
 
 var map_data: Array = []
 var city_positions : Array[Vector2i] = []
@@ -51,23 +62,53 @@ var city_bought_this_turn: Dictionary = {}
 func _ready() -> void:
 	randomize()
 
+	# --- Detectar el AtlasSource del TileSet automáticamente ---
+	var ts := tile_map.tile_set
+	if ts == null:
+		push_error("TileMap NO tiene TileSet asignado.")
+		return
+
+	atlas_source_id = -1
+	atlas_source = null
+
+	for i in range(ts.get_source_count()):
+		var id := ts.get_source_id(i)
+		var src := ts.get_source(id)
+		if src is TileSetAtlasSource:
+			atlas_source_id = id
+			atlas_source = src
+			break
+
+	if atlas_source_id == -1 or atlas_source == null:
+		push_error("No hay TileSetAtlasSource en el TileSet (no es un atlas).")
+		return
+
+	print("Atlas source id detectado: ", atlas_source_id)
+
+	# --- IDs jugadores ---
 	player_ids = GameData.get_player_ids()
 	print("Player IDs en mapa: ", player_ids)
+
+	# --- CityMenu ---
 	if city_menu == null:
 		push_error("CityMenu no esta instanciado en HUD")
 		return
+
 	city_menu.buy_requested.connect(_on_city_menu_buy_requested)
 	city_menu.closed.connect(_on_city_menu_closed)
-	
+
+	# --- HUD ---
 	hud.end_turn_confirmed.connect(_on_hud_end_turn_confirmed)
 
+	# --- Solo el servidor genera el mapa y sincroniza ---
 	if multiplayer.is_server():
 		print("SERVER: player_ids = ", player_ids)
+
 		generate_map()
 		assign_cities_to_players()
 		start_turns()
 		_init_player_economy()
-		
+
 		# Enviar todo a los clientes
 		rpc("sync_map_and_turns", map_data, player_cities, turn_order, current_turn_index)
 		rpc("sync_economy", player_resources, player_income, round_number)
@@ -156,27 +197,28 @@ func draw_map() -> void:
 		push_warning("draw_map: map_data esta vacio, no dibujo nada")
 		return
 
+	if atlas_source_id == -1 or atlas_source == null:
+		push_error("draw_map: atlas_source no inicializado.")
+		return
+
 	for y in range(map_data.size()):
 		var row = map_data[y]
 		for x in range(row.size()):
-			var terrain: int = row[x]
-			var source_id: int = -1
+			var terrain: int = int(row[x])
 
-			match terrain:
-				Terrain.CAMPO:
-					source_id = 0  # Campo.png (ID 0)
-				Terrain.BOSQUE:
-					source_id = 1  # Bosque.png
-				Terrain.MONTANIA:
-					source_id = 2  # Montania.png
-				Terrain.AGUA:
-					source_id = 3  # Agua.png
-				Terrain.CIUDAD:
-					source_id = 4  # Ciudad.png
+			if not TERRAIN_ATLAS.has(terrain):
+				continue
 
-			if source_id != -1:
-				tile_map.set_cell(0, Vector2i(x, y), source_id, Vector2i.ZERO)
+			var atlas_coords: Vector2i = TERRAIN_ATLAS[terrain]
 
+			# Si el tile NO existe en el atlas, no se pintará (y así lo detectas)
+			if not atlas_source.has_tile(atlas_coords):
+				push_warning("No existe tile en atlas_coords=%s para terrain=%s" % [str(atlas_coords), str(terrain)])
+				continue
+
+			# alternative_tile = 0 (explícito)
+			tile_map.set_cell(0, Vector2i(x, y), atlas_source_id, atlas_coords, 0)
+				
 func center_map() -> void:
 	var used: Rect2i = tile_map.get_used_rect()
 

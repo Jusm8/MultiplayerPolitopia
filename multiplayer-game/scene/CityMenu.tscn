@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://c5w7qmskabhu" path="res://script/city_menu.gd" id="1_yr66a"]
 
 [node name="CityMenu" type="Control"]
+visible = false
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_yr66a")

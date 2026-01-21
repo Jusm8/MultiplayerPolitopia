@@ -1,7 +1,7 @@
 extends Camera2D
 
 @export var zoom_min := 0.5
-@export var zoom_max := 2.0
+@export var zoom_max := 4.5
 @export var zoom_speed := 0.1
 
 @export var drag_sensitivity := 0.5       # qué tanto se mueve por pixel de ratón
