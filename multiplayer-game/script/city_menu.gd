@@ -24,23 +24,52 @@ var _can_buy_here: bool = true
 func _ready() -> void:
 	hide()
 
-	# Coger botones dentro de UnitGrid
+	# Conectar SIEMPRE buy y close
+	btn_buy.pressed.connect(_on_buy_pressed)
+	btn_close.pressed.connect(_on_close_pressed)
+
+	# 1) Buscar botones dentro de UnitGrid (Button o TextureButton)
 	unit_buttons.clear()
 	for child in unit_grid.get_children():
 		if child is Button:
 			unit_buttons.append(child)
+		elif child is TextureButton:
+			# Lo tratamos como "botón" igualmente
+			unit_buttons.append(child)
 
-	if unit_buttons.size() < 4:
-		push_error("CityMenu: UnitGrid necesita 4 botones (Button). Actualmente: %d" % unit_buttons.size())
+	print("CityMenu: botones encontrados en UnitGrid =", unit_buttons.size())
+
+	# 2) Cargar icono (fallback si no existe)
+	var tex: Texture2D = null
+
+	# icon.svg puede no existir en tu proyecto -> comprobamos
+	if ResourceLoader.exists("res://icon.svg"):
+		tex = load("res://icon.svg")
+	elif ResourceLoader.exists("res://icon.png"):
+		tex = load("res://icon.png")
+	else:
+		push_warning("CityMenu: No existe res://icon.svg ni res://icon.png. Pon un icono en res://")
+		# aquí salimos pero sin crashear
 		return
 
-	# Conectar botones
+	# 3) Asignar iconos y conectar clicks
 	for i in range(unit_buttons.size()):
 		var idx := i
-		unit_buttons[i].pressed.connect(func(): _select_unit(idx))
+		var b = unit_buttons[i]
 
-	btn_buy.pressed.connect(_on_buy_pressed)
-	btn_close.pressed.connect(_on_close_pressed)
+		# Si es Button normal
+		if b is Button:
+			b.icon = tex
+			b.expand_icon = true
+			b.text = ""
+			b.custom_minimum_size = Vector2(72, 72) # para que se vea SIEMPRE
+			b.pressed.connect(func(): _select_unit(idx))
+
+		# Si es TextureButton
+		elif b is TextureButton:
+			b.texture_normal = tex
+			b.custom_minimum_size = Vector2(72, 72)
+			b.pressed.connect(func(): _select_unit(idx))
 
 func open_for_city(city_cell: Vector2i, unit_db: Array[Dictionary], my_wood: int, my_stone: int, can_buy_here: bool) -> void:
 	_city_cell = city_cell

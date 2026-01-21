@@ -41,7 +41,7 @@ script = ExtResource("8_r2pf6")
 [node name="CityMenu" parent="HUD" instance=ExtResource("10_8ec4r")]
 
 [node name="TopBar" type="Panel" parent="HUD"]
-offset_right = 1152.0
+offset_right = 1280.0
 offset_bottom = 136.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HUD/TopBar"]
@@ -86,10 +86,10 @@ layout_mode = 2
 [node name="EndTurnBtn" type="Button" parent="HUD/TopBar"]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.8541667
-anchor_top = 3.5882354
-anchor_right = 0.9652778
-anchor_bottom = 4.529412
+anchor_left = 0.88125
+anchor_top = 4.1764708
+anchor_right = 0.98125
+anchor_bottom = 5.117647
 offset_right = 8.0
 offset_bottom = 8.0
 icon = ExtResource("9_npqkg")
