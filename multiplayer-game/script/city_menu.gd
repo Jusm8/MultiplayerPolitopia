@@ -5,7 +5,7 @@ signal buy_requested(city_cell: Vector2i, unit_id: int)
 signal closed
 
 @onready var unit_grid: Control = $Panel/HBox/UnitGrid
-var unit_buttons: Array[Button] = []
+var unit_buttons: Array[BaseButton] = []
 
 @onready var label_name: Label = $Panel/HBox/Info/LabelName
 @onready var label_stats: Label = $Panel/HBox/Info/LabelStats
@@ -24,52 +24,50 @@ var _can_buy_here: bool = true
 func _ready() -> void:
 	hide()
 
-	# Conectar SIEMPRE buy y close
+	# Botones principales
 	btn_buy.pressed.connect(_on_buy_pressed)
 	btn_close.pressed.connect(_on_close_pressed)
 
-	# 1) Buscar botones dentro de UnitGrid (Button o TextureButton)
+	# 1) Coger botones dentro de UnitGrid (TextureButton o Button)
 	unit_buttons.clear()
 	for child in unit_grid.get_children():
-		if child is Button:
-			unit_buttons.append(child)
-		elif child is TextureButton:
-			# Lo tratamos como "botón" igualmente
+		if child is BaseButton:
 			unit_buttons.append(child)
 
 	print("CityMenu: botones encontrados en UnitGrid =", unit_buttons.size())
 
-	# 2) Cargar icono (fallback si no existe)
+	# 2) Cargar icono de ejemplo (Godot)
 	var tex: Texture2D = null
-
-	# icon.svg puede no existir en tu proyecto -> comprobamos
 	if ResourceLoader.exists("res://icon.svg"):
 		tex = load("res://icon.svg")
 	elif ResourceLoader.exists("res://icon.png"):
 		tex = load("res://icon.png")
 	else:
-		push_warning("CityMenu: No existe res://icon.svg ni res://icon.png. Pon un icono en res://")
-		# aquí salimos pero sin crashear
-		return
+		push_warning("CityMenu: No existe res://icon.svg ni res://icon.png. No puedo poner icono de ejemplo.")
 
-	# 3) Asignar iconos y conectar clicks
+	# 3) Configurar botones + conectar click
 	for i in range(unit_buttons.size()):
 		var idx := i
-		var b = unit_buttons[i]
+		var b := unit_buttons[i]
 
-		# Si es Button normal
-		if b is Button:
-			b.icon = tex
-			b.expand_icon = true
-			b.text = ""
-			b.custom_minimum_size = Vector2(72, 72) # para que se vea SIEMPRE
-			b.pressed.connect(func(): _select_unit(idx))
+		# Tamaño mínimo para que se vea sí o sí
+		b.custom_minimum_size = Vector2(96, 96)
 
-		# Si es TextureButton
-		elif b is TextureButton:
-			b.texture_normal = tex
-			b.custom_minimum_size = Vector2(72, 72)
-			b.pressed.connect(func(): _select_unit(idx))
+		# Poner icono según tipo
+		if tex != null:
+			if b is TextureButton:
+				var tb := b as TextureButton
+				tb.texture_normal = tex
+				tb.ignore_texture_size = true
+				tb.stretch_mode = TextureButton.STRETCH_SCALE
+			elif b is Button:
+				var bt := b as Button
+				bt.icon = tex
+				bt.expand_icon = true
+				bt.text = ""
+
+		# Conectar selección
+		b.pressed.connect(func(): _select_unit(idx))
 
 func open_for_city(city_cell: Vector2i, unit_db: Array[Dictionary], my_wood: int, my_stone: int, can_buy_here: bool) -> void:
 	_city_cell = city_cell
@@ -84,6 +82,10 @@ func open_for_city(city_cell: Vector2i, unit_db: Array[Dictionary], my_wood: int
 	label_desc.text = ""
 	label_cost.text = ""
 	btn_buy.disabled = true
+
+	# Desactivar botones si no se puede comprar
+	for b in unit_buttons:
+		b.disabled = not _can_buy_here
 
 	if not _can_buy_here:
 		label_desc.text = "Ya compraste 1 tropa en esta ciudad este turno."
@@ -105,14 +107,28 @@ func _select_unit(unit_id: int) -> void:
 	label_desc.text = str(u.get("desc", ""))
 	label_cost.text = "Coste: %d madera, %d piedra" % [int(u.get("wood_cost", 0)), int(u.get("stone_cost", 0))]
 
-	var can_afford := _my_wood >= int(u.get("wood_cost", 0)) and _my_stone >= int(u.get("stone_cost", 0))
+	var wood_cost := int(u.get("wood_cost", 0))
+	var stone_cost := int(u.get("stone_cost", 0))
+	var can_afford := _my_wood >= wood_cost and _my_stone >= stone_cost
+
 	btn_buy.disabled = not can_afford
 
 func _on_buy_pressed() -> void:
 	if _selected_unit == -1:
 		return
+	if btn_buy.disabled:
+		return
+
+	# Cerrar para que al abrir de nuevo use recursos nuevos
+	hide()
+	closed.emit()
+
+	# Emitimos al mapa para que el server haga la compra
 	buy_requested.emit(_city_cell, _selected_unit)
 
 func _on_close_pressed() -> void:
 	hide()
 	closed.emit()
+
+func get_city_cell() -> Vector2i:
+	return _city_cell

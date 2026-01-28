@@ -7,6 +7,8 @@ signal end_turn_confirmed
 @onready var label_wood: Label = $TopBar/VBoxContainer/HBoxContainer/LabelWood
 @onready var label_stone: Label = $TopBar/VBoxContainer/HBoxContainer/LabelStone
 @onready var label_round: Label = $TopBar/VBoxContainer/HBoxContainer/LabelRound
+@onready var label_message: Label = $TopBar/LabelMessage
+@onready var msg_timer: Timer = $TopBar/MsgTimer #crear timer hijo
 
 @onready var bottom_panel: PanelContainer = $TopBar/PanelContainer
 @onready var label_title_info: Label = $TopBar/PanelContainer/HBoxContainer/LabelTitleInfo
@@ -19,6 +21,11 @@ func _ready() -> void:
 	bottom_panel.visible = false
 	end_turn_btn.pressed.connect(_on_end_turn_button_pressed)
 	confirm_end_turn_dialog.confirmed.connect(_on_confirmed)
+	label_message.hide()
+	msg_timer.one_shot = true
+	msg_timer.timeout.connect(func():
+		label_message.hide()
+		)
 
 func _on_end_turn_button_pressed() -> void:
 	confirm_end_turn_dialog.dialog_text = "¿Seguro que quieres pasar turno?"
@@ -51,3 +58,9 @@ func set_selected_tile(cell: Vector2i, terrain: int) -> void:
 
 	label_title_info.text = "Casilla (%d, %d) - %s" % [cell.x, cell.y, terrain_name]
 	bottom_panel.visible = true
+
+func show_error(text: String) -> void:
+	label_message.text = text
+	label_message.modulate = Color(1.0, 0.0, 0.0, 1.0)
+	label_message.show()
+	msg_timer.start(1.5)

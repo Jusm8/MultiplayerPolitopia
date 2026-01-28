@@ -1,8 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://cuv3wt6wrk1gd"]
+[gd_scene load_steps=10 format=3 uid="uid://cuv3wt6wrk1gd"]
 
 [ext_resource type="Script" uid="uid://b63sk50e5dxjs" path="res://script/mapa.gd" id="1_nhjw5"]
-[ext_resource type="Texture2D" uid="uid://3emj43qiujyt" path="res://assets/mapaImg/TileMapMultiplayer.png" id="2_7pudt"]
+[ext_resource type="Texture2D" uid="uid://cilihy7f5nccx" path="res://assets/SoldadosMultiplayer.png" id="2_7pudt"]
 [ext_resource type="Script" uid="uid://cg77nl5xilu14" path="res://script/camera.gd" id="7_10ars"]
+[ext_resource type="PackedScene" uid="uid://b16wkwh43n1o3" path="res://scene/Units_layer.tscn" id="7_r2pf6"]
 [ext_resource type="Script" uid="uid://20l5svnbesmy" path="res://script/hud.gd" id="8_r2pf6"]
 [ext_resource type="Texture2D" uid="uid://b4vskhtyxw33g" path="res://icon.svg" id="9_npqkg"]
 [ext_resource type="PackedScene" uid="uid://3abew6xy87gd" path="res://scene/CityMenu.tscn" id="10_8ec4r"]
@@ -10,18 +11,16 @@
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_10ars"]
 texture = ExtResource("2_7pudt")
 texture_region_size = Vector2i(32, 32)
+0:0/0 = 0
+1:0/0 = 0
 2:0/0 = 0
 3:0/0 = 0
-4:0/0 = 0
-5:0/0 = 0
-6:0/0 = 0
-1:0/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_f52q7"]
 tile_shape = 1
 tile_layout = 5
 tile_size = Vector2i(32, 32)
-sources/6 = SubResource("TileSetAtlasSource_10ars")
+sources/0 = SubResource("TileSetAtlasSource_10ars")
 
 [node name="mapa" type="Node2D"]
 script = ExtResource("1_nhjw5")
@@ -29,7 +28,7 @@ script = ExtResource("1_nhjw5")
 [node name="TileMap" type="TileMap" parent="."]
 tile_set = SubResource("TileSet_f52q7")
 format = 2
-layer_1/name = "Layer1"
+layer_1/name = "Unit_Layer"
 
 [node name="Camera" type="Camera2D" parent="."]
 position = Vector2(640, 360)
@@ -96,3 +95,16 @@ icon = ExtResource("9_npqkg")
 metadata/_edit_use_anchors_ = true
 
 [node name="ConfirmEndTurnDialog" type="ConfirmationDialog" parent="HUD/TopBar"]
+
+[node name="LabelMessage" type="Label" parent="HUD/TopBar"]
+visible = false
+layout_mode = 0
+offset_left = 600.0
+offset_top = 96.0
+offset_right = 640.0
+offset_bottom = 119.0
+
+[node name="MsgTimer" type="Timer" parent="HUD/TopBar"]
+
+[node name="UnitsLayer" parent="." instance=ExtResource("7_r2pf6")]
+atlas_texture = ExtResource("2_7pudt")

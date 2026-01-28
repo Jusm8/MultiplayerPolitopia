@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://3abew6xy87gd"]
+[gd_scene load_steps=5 format=3 uid="uid://3abew6xy87gd"]
 
 [ext_resource type="Script" uid="uid://c5w7qmskabhu" path="res://script/city_menu.gd" id="1_yr66a"]
+[ext_resource type="Texture2D" uid="uid://b4vskhtyxw33g" path="res://icon.svg" id="2_amciv"]
 
 [sub_resource type="Theme" id="Theme_yr66a"]
 
@@ -16,6 +17,7 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [node name="CityMenu" type="Control"]
+visible = false
 layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 4
@@ -37,16 +39,55 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_yr66a")
 
 [node name="HBox" type="HBoxContainer" parent="Panel"]
 layout_mode = 0
-offset_left = -168.0
-offset_top = -2.0
-offset_right = 344.0
-offset_bottom = 284.0
+offset_left = 448.0
+offset_top = 136.0
+offset_right = 780.0
+offset_bottom = 396.0
 
 [node name="UnitGrid" type="GridContainer" parent="Panel/HBox"]
 layout_mode = 2
 columns = 2
 
+[node name="Soldado" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "Soldado
+"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="General" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "General
+"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="Arquero" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "Arquero"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="Tanque" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "Tanque"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
 [node name="Info" type="VBoxContainer" parent="Panel/HBox"]
+custom_minimum_size = Vector2(100, 250)
 layout_mode = 2
 
 [node name="LabelName" type="Label" parent="Panel/HBox/Info"]
