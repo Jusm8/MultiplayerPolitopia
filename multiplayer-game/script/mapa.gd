@@ -4,9 +4,9 @@ extends Node2D
 @onready var camera: Camera2D = $Camera
 @onready var hud: HUD = $HUD
 @onready var city_menu: CityMenu = $HUD/CityMenu
-@onready var units_layer: Unit = $UnitsLayer
+@onready var units_layer: Node2D = $UnitsLayer
 
-const UNIT_SCENE := preload("res://scene/Units_layer.tscn")
+const UNIT_SCENE := preload("res://scene/Units.tscn")
 const GRID_SIZE := 16
 
 const  TERRAIN_ATLAS := {
@@ -584,12 +584,15 @@ func request_buy_unit(city_cell: Vector2i, unit_id: int) -> void:
 
 	# Marcar ciudad como comprada este turno
 	city_bought_this_turn[key] = true
-
-	# Instanciar la tropa
+	rpc("spawn_unit", sender, unit_id, city_cell)
 
 	# Sincronizar
 	rpc("sync_economy", player_resources, player_income, round_number)
 	rpc("sync_city_bought", city_bought_this_turn)
+	
+@rpc("any_peer", "call_local")
+func spawn_unit(owner_id: int, unit_id: int, cell: Vector2i) -> void:
+	_spawn_unit_local(owner_id, unit_id, cell)
 
 @rpc("any_peer", "call_local")
 func sync_city_bought(remote_dict: Dictionary) -> void:
@@ -608,10 +611,8 @@ func client_show_error(msg: String) -> void:
 	hud.show_error(msg)
 
 func _cell_to_world(cell: Vector2i) -> Vector2:
-	# Centro de la casilla en coords locales del tileMap
-	var local_center := tile_map.map_to_local(cell)
-	# Pasar a coordenadas locales
-	return tile_map.to_global(local_center)
+	var local_pos := tile_map.map_to_local(cell)
+	return tile_map.to_global(local_pos)
 
 func _spawn_unit_local(owner_id: int, unit_id: int, cell: Vector2i) -> void:
 	var key := _city_key(cell)
@@ -619,9 +620,11 @@ func _spawn_unit_local(owner_id: int, unit_id: int, cell: Vector2i) -> void:
 	# Si hay una unidad en esa casilla evitamos duplicados
 	if units_by_cell.has(key):
 		return
-		
+	
 	var u: Unit = UNIT_SCENE.instantiate()
 	units_layer.add_child(u)
+	
+	u.atlas_texture = preload("res://assets/SoldadosMultiplayer.png")
 	
 	u.setup(owner_id, unit_id, cell)
 	# Poscicionar encima de la tile
