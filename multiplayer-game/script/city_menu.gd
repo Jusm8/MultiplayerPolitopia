@@ -118,13 +118,11 @@ func _on_buy_pressed() -> void:
 		return
 	if btn_buy.disabled:
 		return
-
+	
+	buy_requested.emit(_city_cell, _selected_unit)
 	# Cerrar para que al abrir de nuevo use recursos nuevos
 	hide()
 	closed.emit()
-
-	# Emitimos al mapa para que el server haga la compra
-	buy_requested.emit(_city_cell, _selected_unit)
 
 func _on_close_pressed() -> void:
 	hide()

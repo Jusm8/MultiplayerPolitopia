@@ -31,7 +31,7 @@ tile_set = SubResource("TileSet_f52q7")
 format = 2
 layer_1/name = "Unit_Layer"
 
-[node name="UnitsLayer" type="Node2D" parent="."]
+[node name="UnitsLayer" type="Node2D" parent="TileMap"]
 z_index = 10
 
 [node name="Camera" type="Camera2D" parent="."]

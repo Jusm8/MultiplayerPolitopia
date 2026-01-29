@@ -4,7 +4,7 @@ extends Node2D
 @onready var camera: Camera2D = $Camera
 @onready var hud: HUD = $HUD
 @onready var city_menu: CityMenu = $HUD/CityMenu
-@onready var units_layer: Node2D = $UnitsLayer
+@onready var units_layer: Node2D = $TileMap/UnitsLayer
 
 const UNIT_SCENE := preload("res://scene/Units.tscn")
 const GRID_SIZE := 16
@@ -70,6 +70,18 @@ var units_by_cell: Dictionary = {}  # x,y -> Unit
 
 func _ready() -> void:
 	randomize()
+	
+	if city_menu == null:
+		push_error("CityMenu no instanciado en HUD")
+		return
+	# Evitar que salgan 2 tropas 
+	if not city_menu.buy_requested.is_connected(_on_city_menu_buy_requested):
+		city_menu.buy_requested.connect(_on_city_menu_buy_requested)
+	if not city_menu.closed.is_connected(_on_city_menu_closed):
+		city_menu.closed.connect(_on_city_menu_closed)
+
+	# HUD
+	hud.end_turn_confirmed.connect(_on_hud_end_turn_confirmed)
 
 	#  Detectar el AtlasSource del TileSet automáticamente
 	var ts := tile_map.tile_set
@@ -102,12 +114,6 @@ func _ready() -> void:
 	if city_menu == null:
 		push_error("CityMenu no esta instanciado en HUD")
 		return
-
-	city_menu.buy_requested.connect(_on_city_menu_buy_requested)
-	city_menu.closed.connect(_on_city_menu_closed)
-
-	# HUD 
-	hud.end_turn_confirmed.connect(_on_hud_end_turn_confirmed)
 
 	# Solo el servidor genera el mapa y sincroniza
 	if multiplayer.is_server():
@@ -509,6 +515,10 @@ func _open_city_menu(cell: Vector2i) -> void:
 	city_menu.open_for_city(cell, unit_db, wood, stone, can_buy_here)
 
 func _on_city_menu_buy_requested(city_cell: Vector2i, unit_id: int) -> void:
+	print("[CLIENT]", multiplayer.get_unique_id(),
+		" buy_requested city_cell=", city_cell,
+		" unit_id=", unit_id,
+		" is_server=", multiplayer.is_server())
 	if not is_my_turn:
 		return
 	
@@ -531,6 +541,10 @@ func _on_city_menu_closed() -> void:
 
 @rpc("any_peer")
 func request_buy_unit(city_cell: Vector2i, unit_id: int) -> void:
+	print("[SERVER] request_buy_unit sender=", multiplayer.get_remote_sender_id(),
+		" city_cell=", city_cell,
+		" unit_id=", unit_id)
+
 	if not multiplayer.is_server():
 		return
 
@@ -592,6 +606,8 @@ func request_buy_unit(city_cell: Vector2i, unit_id: int) -> void:
 	
 @rpc("any_peer", "call_local")
 func spawn_unit(owner_id: int, unit_id: int, cell: Vector2i) -> void:
+	print("[SPAWN RPC] on peer=", multiplayer.get_unique_id(),
+		" owner=", owner_id, " unit_id=", unit_id, " cell=", cell)
 	_spawn_unit_local(owner_id, unit_id, cell)
 
 @rpc("any_peer", "call_local")
@@ -616,18 +632,19 @@ func _cell_to_world(cell: Vector2i) -> Vector2:
 
 func _spawn_unit_local(owner_id: int, unit_id: int, cell: Vector2i) -> void:
 	var key := _city_key(cell)
-	
-	# Si hay una unidad en esa casilla evitamos duplicados
-	if units_by_cell.has(key):
+	if units_by_cell.has(cell):
 		return
-	
+
 	var u: Unit = UNIT_SCENE.instantiate()
 	units_layer.add_child(u)
 	
 	u.atlas_texture = preload("res://assets/SoldadosMultiplayer.png")
-	
 	u.setup(owner_id, unit_id, cell)
+	
+	var ts: Vector2 = Vector2(tile_map.tile_set.tile_size)
+	var center_offset := ts * 0.5
+	
 	# Poscicionar encima de la tile
-	u.global_position = _cell_to_world(cell) + u.base_offset
+	u.position = tile_map.map_to_local(cell) + center_offset + u.base_offset
 	u.z_index = cell.y * 100 + cell.x
 	units_by_cell[key] = u

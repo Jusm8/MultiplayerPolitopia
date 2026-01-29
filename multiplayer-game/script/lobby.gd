@@ -9,6 +9,19 @@ extends Control
 @onready var start_btn: Button = $VBoxContainer/Start_btn
 @onready var status_lb: Label = $VBoxContainer/Status_lb
 
+# Steam
+@onready var createSteam_btn: Button = $SteamPart/CreateBtn
+@onready var refresh_btn: Button = $SteamPart/RefreshBtn
+@onready var rooms_vbox: VBoxContainer = $SteamPart/RoomsVbox
+@onready var statusSteam_lb: Label = $SteamPart/StatusLb
+
+const MAX_MEMBERS := 4
+const GAME_KEY := "JUEGOMULTIPLAYER_V1" # clave test
+
+var current_lobby_id: int = 0
+
+var host_peer_id: int = 1
+
 var is_host: bool = false
 var max_player: int = 4
 var players:= {} #peer_id nombre
@@ -26,60 +39,63 @@ func _ready() -> void:
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconected)
 	
+	createSteam_btn.pressed.connect(_on_create_steam_pressed)
+	refresh_btn.pressed.connect(_on_refresh_pressed)
+
+	Steam.lobby_created.connect(_on_lobby_created)
+	Steam.lobby_match_list.connect(_on_lobby_match_list)
+	Steam.lobby_joined.connect(_on_lobby_joined)
+
 func _on_host_pressed() -> void:
 	var player_name := name_input.text.strip_edges()
 	if player_name == "":
 		status_lb.text = "Pon un nombre antes de crear la partida"
 		return
-	
-	var port:= port_input.text.to_int()
+
+	var port := port_input.text.to_int()
 	if port <= 0:
+		status_lb.text = "Puerto inválido"
+		return
+
+	var err: int = NetworkManager.host_local(port, max_player)
+	if err != OK:
 		status_lb.text = "No se pudo crear el servidor"
 		return
-	
-	var peer := ENetMultiplayerPeer.new()
-	var error := peer.create_server(port, max_player)
-	if error != OK:
-		status_lb.text = "No se puedo crear el servidor"
-		return
-	
-	multiplayer.multiplayer_peer = peer
+
+	host_peer_id = multiplayer.get_unique_id()
+
 	is_host = true
-	status_lb.text = "Servidor creado en el puerto %d. Esperando jugadores..." % port 
-	
+	status_lb.text = "Servidor (LOCAL) creado en %d. Esperando..." % port
+
 	var my_id := multiplayer.get_unique_id()
 	players[my_id] = player_name
-	
 	_refresh_player_ui()
-	_broadcast_playes()  
+	_broadcast_playes()
 
 func _on_join_pressed() -> void:
 	var player_name := name_input.text.strip_edges()
 	if player_name == "":
 		status_lb.text = "Pon un nombre antes de unirte"
 		return
-	
+
 	var ip := ip_input.text.strip_edges()
-	var port:= port_input.text.to_int()
+	var port := port_input.text.to_int()
 	if port <= 0:
-		status_lb.text = "Puerto invalido"
+		status_lb.text = "Puerto inválido"
 		return
-	
-	var peer := ENetMultiplayerPeer.new()
-	var error := peer.create_client(ip, port)
-	if error != OK:
-		status_lb.text = "No se pudo encontrar el servidor"
+
+	var err := NetworkManager.join_local(ip, port)
+	if err != OK:
+		status_lb.text = "No se pudo conectar"
 		return
-	
-	multiplayer.multiplayer_peer = peer
+
 	is_host = false
-	status_lb.text = "Conectando a %s:%d..." % [ip, port]
+	status_lb.text = "Conectando (LOCAL) a %s:%d..." % [ip, port]
 
 func _on_connected_to_server() -> void:
-	status_lb.text = "Conectando al servidor. Registrando jugador..."
+	status_lb.text = "Conectado. Registrando jugador..."
 	var player_name := name_input.text.strip_edges()
-	# El server siempre es el peer 1
-	rpc_id(1, "register_player", player_name)
+	rpc_id(host_peer_id, "register_player", player_name)
 
 func _on_connection_failed() -> void:
 	status_lb.text = "Fallo la conexion al servidor"
@@ -170,3 +186,93 @@ func _on_start_pressed() -> void:
 func start_game() -> void:
 	# Cambiar a la escena del mapa en todos los peers
 	get_tree().change_scene_to_file("res://scene/mapa.tscn")
+
+func _on_create_steam_pressed() -> void:
+	var player_name := name_input.text.strip_edges()
+	if player_name == "":
+		statusSteam_lb.text = "Pon un nombre antes de crear sala Steam"
+		return
+
+	statusSteam_lb.text = "Creando sala Steam..."
+	Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, MAX_MEMBERS)
+
+func _on_lobby_created(result: int, lobby_id: int) -> void:
+	if result != 1:
+		statusSteam_lb.text = "Error creando lobby (result=%s)" % result
+		return
+
+	current_lobby_id = lobby_id
+	Steam.setLobbyData(lobby_id, "game", GAME_KEY)
+	Steam.setLobbyData(lobby_id, "name", "Sala de " + Steam.getPersonaName())
+
+	if not NetworkManager.host_steam():
+		statusSteam_lb.text = "No pude iniciar red Steam (SteamMultiplayerPeer faltante)."
+		return
+
+	host_peer_id = multiplayer.get_unique_id()
+
+	is_host = true
+	statusSteam_lb.text = "Sala Steam creada. Esperando..."
+
+	var my_id := multiplayer.get_unique_id()
+	players[my_id] = name_input.text.strip_edges()
+	_refresh_player_ui()
+	_broadcast_playes()
+
+func _on_refresh_pressed() -> void:
+	_clear_rooms()
+	statusSteam_lb.text = "Buscando salas Steam..."
+
+	Steam.addRequestLobbyListStringFilter("game", GAME_KEY, Steam.LOBBY_COMPARISON_EQUAL)
+	Steam.addRequestLobbyListResultCountFilter(50)
+	Steam.requestLobbyList()
+
+func _on_lobby_match_list(lobbies: Array) -> void:
+	statusSteam_lb.text = "Salas encontradas: %d" % lobbies.size()
+
+	for lobby_id in lobbies:
+		var name := Steam.getLobbyData(lobby_id, "name")
+		if name == "": name = "Lobby " + str(lobby_id)
+		_add_room_row(lobby_id, name, Steam.getNumLobbyMembers(lobby_id))
+
+func _add_room_row(lobby_id: int, lobby_name: String, members: int) -> void:
+	var row := HBoxContainer.new()
+	var lbl := Label.new()
+	lbl.text = "%s (%d/%d)" % [lobby_name, members, MAX_MEMBERS]
+
+	var btn := Button.new()
+	btn.text = "Entrar"
+	btn.pressed.connect(func():
+		statusSteam_lb.text = "Entrando a %s..." % lobby_name
+		Steam.joinLobby(lobby_id)
+	)
+
+	row.add_child(lbl)
+	row.add_child(btn)
+	rooms_vbox.add_child(row)
+
+func _on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, _response: int) -> void:
+	current_lobby_id = lobby_id
+	statusSteam_lb.text = "Dentro del lobby. Conectando a host..."
+
+	var host_steam_id := Steam.getLobbyOwner(lobby_id)
+
+	if not NetworkManager.join_steam(host_steam_id):
+		statusSteam_lb.text = "No pude unirme por Steam (SteamMultiplayerPeer faltante)."
+		return
+
+	is_host = false
+
+	# Espera a que se cree la sesión P2P y aparezcan peers
+	await get_tree().create_timer(0.3).timeout
+	var peers := multiplayer.get_peers()
+
+	# Heurística: el host suele ser el primer peer que ves
+	if peers.size() > 0:
+		host_peer_id = int(peers[0])
+	else:
+		host_peer_id = 1
+
+func _clear_rooms() -> void:
+	for c in rooms_vbox.get_children():
+		c.queue_free()
