@@ -1,10 +1,10 @@
 extends Node2D
 class_name Unit
 
-@export var atlas_texture: Texture2D # asigna SoldadosMultiplayer.png desde el inspector
+@export var atlas_texture: Texture2D
 @export var frame_size: Vector2i = Vector2i(32, 32)
-@export var base_offset: Vector2 = Vector2(0, -18) 
-# ajusta este offset para que "pise" bien la loseta (depende de tu arte)
+@export var base_offset: Vector2 = Vector2(0, 0) 
+
 
 var owner_id: int = -1
 var unit_id: int = -1
@@ -12,7 +12,6 @@ var cell: Vector2i
 
 @onready var sprite: Sprite2D = $Sprite2D
 
-# unit_id -> coordenadas (col, fila) en el spritesheet
 const UNIT_ATLAS := {
 	0: Vector2i(0, 0), # Soldado
 	1: Vector2i(1, 0), # General
@@ -42,5 +41,4 @@ func _apply_sprite() -> void:
 	sprite.region_enabled = true
 	sprite.region_rect = Rect2(coord.x * frame_size.x, coord.y * frame_size.y, frame_size.x, frame_size.y)
 
-	# opcional: centrar el sprite para que el offset sea más intuitivo
 	sprite.centered = true

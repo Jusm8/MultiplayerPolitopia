@@ -632,19 +632,21 @@ func _cell_to_world(cell: Vector2i) -> Vector2:
 
 func _spawn_unit_local(owner_id: int, unit_id: int, cell: Vector2i) -> void:
 	var key := _city_key(cell)
-	if units_by_cell.has(cell):
+
+	if units_by_cell.has(key):
 		return
 
 	var u: Unit = UNIT_SCENE.instantiate()
 	units_layer.add_child(u)
-	
+
 	u.atlas_texture = preload("res://assets/SoldadosMultiplayer.png")
 	u.setup(owner_id, unit_id, cell)
-	
-	var ts: Vector2 = Vector2(tile_map.tile_set.tile_size)
-	var center_offset := ts * 0.5
-	
-	# Poscicionar encima de la tile
-	u.position = tile_map.map_to_local(cell) + center_offset + u.base_offset
+
+	u.position = _cell_center_local(cell) + u.base_offset
+
 	u.z_index = cell.y * 100 + cell.x
+
 	units_by_cell[key] = u
+
+func _cell_center_local(cell: Vector2i) -> Vector2:
+	return tile_map.map_to_local(cell)
