@@ -25,6 +25,8 @@ const START_STONE := 5
 const DEFAULT_WOOD_INCOME := 10
 const DEFAULT_STONE_INCOME:= 5
 
+const MOVE_MARKER_TEXTURE := preload("res://assets/iconos/MovementMarker.png")
+
 enum Terrain {
 	CAMPO,
 	CIUDAD,
@@ -67,6 +69,11 @@ var unit_db:Array[Dictionary]= [
 var city_bought_this_turn: Dictionary = {}
 
 var units_by_cell: Dictionary = {}  # x,y -> Unit
+
+var selected_unit: Unit = null
+var move_mode := false
+var move_targets: Array[Vector2i] = []
+var move_markers: Array[Node2D] = []
 
 func _ready() -> void:
 	randomize()
@@ -433,32 +440,41 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		# 1) mundo (con cámara ya aplicada)
 		var world_pos: Vector2 = get_global_mouse_position()
-
-		# 2) mundo -> local del tilemap
 		var local_pos: Vector2 = tile_map.to_local(world_pos)
-
-		# 3) local -> celda del tilemap
 		var cell: Vector2i = tile_map.local_to_map(local_pos)
 
-		# 4) validar dentro del array
 		if cell.y < 0 or cell.y >= map_data.size():
 			return
 		if cell.x < 0 or cell.x >= map_data[cell.y].size():
 			return
 
-		var terrain: int = int(map_data[cell.y][cell.x])
-
 		# filtro rombo iso
 		if not _is_point_inside_iso_cell(local_pos, cell):
 			return
 
+		var key := _city_key(cell)
+
+		if move_mode:
+			if cell in move_targets:
+				_move_unit_to_cell(selected_unit, cell)
+				_exit_move_mode()
+				return
+			_exit_move_mode()
+			return
+
+		if units_by_cell.has(key):
+			var u: Unit = units_by_cell[key]
+			if u != null and u.owner_id == multiplayer.get_unique_id():
+				_enter_move_mode(u)
+				return
+			return
+
+		var terrain: int = int(map_data[cell.y][cell.x])
 		hud.set_selected_tile(cell, terrain)
 
 		if terrain == Terrain.CIUDAD:
 			_open_city_menu(cell)
-
 
 func _is_point_inside_iso_cell(local_pos: Vector2, cell: Vector2i) -> bool:
 	# Posición local del centro de la celda
@@ -649,3 +665,67 @@ func _spawn_unit_local(owner_id: int, unit_id: int, cell: Vector2i) -> void:
 
 func _cell_center_local(cell: Vector2i) -> Vector2:
 	return tile_map.map_to_local(cell)
+
+func _get_adjacent_cells(cell: Vector2i) -> Array[Vector2i]:
+	# 4 direcciones (cruz). Si quieres diagonales, te lo cambio luego.
+	var dirs := [
+		Vector2i(1, 0), Vector2i(-1, 0),
+		Vector2i(0, 1), Vector2i(0, -1),
+	]
+	var out: Array[Vector2i] = []
+	for d in dirs:
+		var c : Vector2i = cell + d
+
+		# bounds
+		if c.y < 0 or c.y >= map_data.size(): continue
+		if c.x < 0 or c.x >= map_data[c.y].size(): continue
+
+		# Evitar moverse a una casilla ocupada
+		if units_by_cell.has(_city_key(c)): continue
+
+		out.append(c)
+	return out
+
+func _clear_move_markers() -> void:
+	for m in move_markers:
+		if is_instance_valid(m):
+			m.queue_free()
+	move_markers.clear()
+	move_targets.clear()
+
+func _show_move_markers(from_cell: Vector2i) -> void:
+	_clear_move_markers()
+	move_targets = _get_adjacent_cells(from_cell)
+
+	for c in move_targets:
+		var marker := Sprite2D.new()
+		marker.texture = MOVE_MARKER_TEXTURE
+		marker.position = _cell_center_local(c)
+		marker.modulate.a = 0.8
+		units_layer.add_child(marker)
+		move_markers.append(marker)
+
+func _enter_move_mode(u: Unit) -> void:
+	selected_unit = u
+	move_mode = true
+	_show_move_markers(u.cell)
+
+func _exit_move_mode() -> void:
+	move_mode = false
+	selected_unit = null
+	_clear_move_markers()
+
+func _move_unit_to_cell(u: Unit, target: Vector2i) -> void:
+	# borrar key anterior
+	var old_key := _city_key(u.cell)
+	if units_by_cell.has(old_key):
+		units_by_cell.erase(old_key)
+
+	# actualizar unidad
+	u.cell = target
+	u.position = _cell_center_local(target) + u.base_offset
+	u.z_index = target.y * 100 + target.x
+
+	# guardar key nueva
+	var new_key := _city_key(target)
+	units_by_cell[new_key] = u
