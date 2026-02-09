@@ -19,6 +19,7 @@ const MAX_MEMBERS := 4
 const GAME_KEY := "JUEGOMULTIPLAYER_V1" # clave test
 
 var current_lobby_id: int = 0
+var pending_register := false
 
 var host_peer_id: int = 1
 
@@ -95,7 +96,7 @@ func _on_join_pressed() -> void:
 func _on_connected_to_server() -> void:
 	status_lb.text = "Conectado. Registrando jugador..."
 	var player_name := name_input.text.strip_edges()
-	rpc_id(host_peer_id, "register_player", player_name)
+	rpc_id(1, "register_player", player_name)
 
 func _on_connection_failed() -> void:
 	status_lb.text = "Fallo la conexion al servidor"
@@ -109,6 +110,12 @@ func _on_server_disconected() -> void:
 func _on_peer_connected(id: int) -> void:
 	if is_host:
 		print("Peer conectado con id: ", id)
+
+	# Si soy cliente Steam, espero al server (peer 1) y registro ahí
+	if pending_register and id == 1:
+		pending_register = false
+		var player_name := name_input.text.strip_edges()
+		rpc_id(1, "register_player", player_name)
 
 func _on_peer_disconnected(id: int) -> void:
 	var name := ""
@@ -209,7 +216,7 @@ func _on_lobby_created(result: int, lobby_id: int) -> void:
 		statusSteam_lb.text = "No pude iniciar red Steam (SteamMultiplayerPeer faltante)."
 		return
 
-	host_peer_id = multiplayer.get_unique_id()
+	host_peer_id = 1
 
 	is_host = true
 	statusSteam_lb.text = "Sala Steam creada. Esperando..."
@@ -262,16 +269,8 @@ func _on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, _response
 		return
 
 	is_host = false
-
-	# Espera a que se cree la sesión P2P y aparezcan peers
-	await get_tree().create_timer(0.3).timeout
-	var peers := multiplayer.get_peers()
-
-	# Heurística: el host suele ser el primer peer que ves
-	if peers.size() > 0:
-		host_peer_id = int(peers[0])
-	else:
-		host_peer_id = 1
+	pending_register = true
+	statusSteam_lb.text = "Conectado por Steam. Esperando al host..."
 
 func _clear_rooms() -> void:
 	for c in rooms_vbox.get_children():

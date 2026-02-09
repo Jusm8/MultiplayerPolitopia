@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GameData="*res://script/GameData.gd"
 NetworkManager="*res://script/NetworkManager.gd"
+SteamManager="*res://script/SteamManager.gd"
 
 [display]
 
