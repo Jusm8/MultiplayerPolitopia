@@ -2,7 +2,7 @@ extends Node2D
 class_name Unit
 
 @export var atlas_texture: Texture2D # asigna SoldadosMultiplayer.png desde el inspector
-@export var frame_size: Vector2i = Vector2i(64, 64)
+@export var frame_size: Vector2i = Vector2i(32, 32)
 @export var base_offset: Vector2 = Vector2(0, -18) 
 # ajusta este offset para que "pise" bien la loseta (depende de tu arte)
 
