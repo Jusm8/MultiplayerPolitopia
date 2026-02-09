@@ -53,7 +53,7 @@ var is_my_turn: bool = false
 # Recursos por jugador
 var player_resources := {} # player_id -> "wood: int, "stone": int}
 
-# Produccion por turno (modificable para cada partida)
+# Produccion por turno
 var player_income := {} # player_id-> {"wood": int, "stone": int}
 
 var unit_db:Array[Dictionary]= [
@@ -74,7 +74,6 @@ func _ready() -> void:
 	if city_menu == null:
 		push_error("CityMenu no instanciado en HUD")
 		return
-	# Evitar que salgan 2 tropas 
 	if not city_menu.buy_requested.is_connected(_on_city_menu_buy_requested):
 		city_menu.buy_requested.connect(_on_city_menu_buy_requested)
 	if not city_menu.closed.is_connected(_on_city_menu_closed):
