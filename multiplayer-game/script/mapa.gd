@@ -26,6 +26,8 @@ const DEFAULT_WOOD_INCOME := 10
 const DEFAULT_STONE_INCOME:= 5
 
 const MOVE_MARKER_TEXTURE := preload("res://assets/iconos/MovementMarker.png")
+const ATTACK_MARKER_TEXTURE := preload("res://assets/iconos/AttackMarker.png")
+const BUSSY_MARKER_TEXTURE := preload("res://assets/iconos/BussyMarker.png")
 
 enum Terrain {
 	CAMPO,
@@ -74,6 +76,7 @@ var selected_unit: Unit = null
 var move_mode := false
 var move_targets: Array[Vector2i] = []
 var move_markers: Array[Node2D] = []
+var attack_targets: Array[Vector2i] = []
 
 func _ready() -> void:
 	randomize()
@@ -457,7 +460,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		if move_mode:
 			if cell in move_targets:
-				_move_unit_to_cell(selected_unit, cell)
+				_request_move_unit(selected_unit.cell, cell)
 				_exit_move_mode()
 				return
 			_exit_move_mode()
@@ -656,6 +659,8 @@ func _spawn_unit_local(owner_id: int, unit_id: int, cell: Vector2i) -> void:
 
 	u.atlas_texture = preload("res://assets/SoldadosMultiplayer.png")
 	u.setup(owner_id, unit_id, cell)
+	var stats := unit_db[unit_id]
+	u.set_stats(int(stats["hp"]), int(stats["dmg"]))
 
 	u.position = _cell_center_local(cell) + u.base_offset
 
@@ -692,18 +697,32 @@ func _clear_move_markers() -> void:
 			m.queue_free()
 	move_markers.clear()
 	move_targets.clear()
+	attack_targets.clear()
 
 func _show_move_markers(from_cell: Vector2i) -> void:
 	_clear_move_markers()
-	move_targets = _get_adjacent_cells(from_cell)
+	
+	var adj := _get_adjacent_cells(from_cell)
 
-	for c in move_targets:
+	for c in adj:
+		var k := _city_key(c)
 		var marker := Sprite2D.new()
 		marker.texture = MOVE_MARKER_TEXTURE
 		marker.position = _cell_center_local(c)
 		marker.modulate.a = 0.8
 		units_layer.add_child(marker)
 		move_markers.append(marker)
+	
+		if units_by_cell.has(k):
+			var other: Unit = units_by_cell[k]
+			# Enemigo marker rojo
+			if other != null and selected_unit != null and other.owner_id != selected_unit.owner_id:
+				attack_targets.append(c)
+				marker.modulate = Color()
+			else:
+				marker.modulate = Color()
+		else:
+			move_targets.append(c)
 
 func _enter_move_mode(u: Unit) -> void:
 	selected_unit = u
@@ -729,3 +748,55 @@ func _move_unit_to_cell(u: Unit, target: Vector2i) -> void:
 	# guardar key nueva
 	var new_key := _city_key(target)
 	units_by_cell[new_key] = u
+
+func _request_move_unit(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	if multiplayer.is_server():
+		request_move_unit(from_cell, to_cell)
+	else:
+		rpc_id(1, "request_move_unit", from_cell, to_cell)
+
+
+@rpc("any_peer")
+func request_move_unit(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	if not multiplayer.is_server():
+		return
+
+	var sender := multiplayer.get_remote_sender_id()
+	if sender == 0:
+		sender = multiplayer.get_unique_id()
+
+	# Solo el jugador del turno
+	if sender != current_player_id:
+		return
+
+	# Debe existir una unidad en from_cell
+	var from_key := _city_key(from_cell)
+	if not units_by_cell.has(from_key):
+		return
+
+	var u: Unit = units_by_cell[from_key]
+
+	# Debe ser su unidad
+	if u.owner_id != sender:
+		return
+
+	# Debe ser adyacente
+	if not (to_cell in _get_adjacent_cells(from_cell)):
+		return
+
+	# Destino libre
+	if units_by_cell.has(_city_key(to_cell)):
+		return
+
+	# OK -> sincronizamos a todos
+	rpc("sync_move_unit", from_cell, to_cell)
+
+
+@rpc("any_peer", "call_local")
+func sync_move_unit(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	var from_key := _city_key(from_cell)
+	if not units_by_cell.has(from_key):
+		return
+
+	var u: Unit = units_by_cell[from_key]
+	_move_unit_to_cell(u, to_cell)
