@@ -29,7 +29,7 @@ func _ready() -> void:
 	hp_label.position = Vector2(5, -15)
 	
 	var font : FontFile = load("res://assets/fonts/Minecraft.ttf")
-	
+	hp_label.add_theme_font_override("font", font)
 	hp_label.add_theme_font_size_override("font_size", 7)
 	
 	hp_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))

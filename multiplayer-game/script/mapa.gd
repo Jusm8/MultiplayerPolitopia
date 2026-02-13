@@ -66,6 +66,11 @@ var unit_db:Array[Dictionary]= [
 	{"name":"Arquero", "hp":10, "dmg":5, "desc":"", "wood_cost":10, "stone_cost": 5},
 	{"name":"Tanque", "hp":55, "dmg":10, "desc":"", "wood_cost":50, "stone_cost":40}
 ]
+# Dueño real de cada ciudad: x,y -> owner_id
+var city_owner_by_key: Dictionary = {}
+
+# Captura pendiente: "x,y" -> owner_id que esta capturando
+var city_capture_pending: Dictionary = {}
 
 # city_key -> true (compró ya este turno)
 var city_bought_this_turn: Dictionary = {}
@@ -134,7 +139,7 @@ func _ready() -> void:
 		_init_player_economy()
 
 		# Enviar todo a los clientes
-		rpc("sync_map_and_turns", map_data, player_cities, turn_order, current_turn_index)
+		rpc("sync_map_and_turns", map_data, player_cities, turn_order, current_turn_index, city_owner_by_key)
 		rpc("sync_economy", player_resources, player_income, round_number)
 
 		print("SERVER: turn_order = ", turn_order)
@@ -267,20 +272,22 @@ func assign_cities_to_players() -> void:
 	shuffled.shuffle()
 
 	player_cities.clear()
+	city_owner_by_key.clear()
+	city_capture_pending.clear()
+	
 	for i in range(player_ids.size()):
 		var pid := player_ids[i]
 		var cell : Vector2i = shuffled[i]
 		player_cities[pid] = cell
+		city_owner_by_key[_city_key(cell)] = pid
 
 	print("Ciudades por jugador: ", player_cities)
 
 func _get_city_count_for_player(player_id: int) -> int:
 	var count := 0
-
-	for owner_id in player_cities.keys():
-		if owner_id == player_id:
+	for key in city_owner_by_key.keys():
+		if int(city_owner_by_key[key]) == player_id:
 			count += 1
-
 	return count
 
 func start_turns() -> void:
@@ -351,6 +358,8 @@ func end_turn() -> void:
 		return
 
 	_apply_end_turn_income(current_player_id)
+	_server_process_city_captures()
+	_server_prune_eliminated_players()
 
 	current_turn_index = (current_turn_index + 1) % turn_order.size()
 	if current_turn_index == 0:
@@ -368,7 +377,8 @@ func sync_map_and_turns(
 		remote_map_data: Array,
 		remote_player_cities: Dictionary,
 		remote_turn_order: Array,
-		remote_current_turn_index: int
+		remote_current_turn_index: int,
+		remote_city_owners: Dictionary
 	) -> void:
 
 	# Si viene vacío, no hacemos nada para evitar crasheos
@@ -392,6 +402,7 @@ func sync_map_and_turns(
 
 	# Ciudades por jugador
 	player_cities = remote_player_cities.duplicate()
+	city_owner_by_key = remote_city_owners.duplicate(true)
 
 	# Turnos
 	turn_order = remote_turn_order.duplicate()
@@ -463,6 +474,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_request_move_unit(selected_unit.cell, cell)
 				_exit_move_mode()
 				return
+			if cell in attack_targets:
+				_request_attack_unit(selected_unit.cell, cell)
+				_exit_move_mode()
+				return
 			_exit_move_mode()
 			return
 
@@ -519,17 +534,15 @@ func _on_new_turn_started() -> void:
 
 func _open_city_menu(cell: Vector2i) -> void:
 	var my_id := multiplayer.get_unique_id()
-
-	# Solo tu ciudad 
-	if not player_cities.has(my_id) or player_cities[my_id] != cell:
-		return
-
 	var wood := int(player_resources.get(my_id, {"wood": 0})["wood"])
 	var stone := int(player_resources.get(my_id, {"stone": 0})["stone"])
-
 	var key := _city_key(cell)
 	var can_buy_here := not city_bought_this_turn.has(key)
-
+	
+	# Solo tu ciudad 
+	if not city_owner_by_key.has(key) or int(city_owner_by_key[key]) != my_id:
+		return
+	
 	city_menu.open_for_city(cell, unit_db, wood, stone, can_buy_here)
 
 func _on_city_menu_buy_requested(city_cell: Vector2i, unit_id: int) -> void:
@@ -685,9 +698,6 @@ func _get_adjacent_cells(cell: Vector2i) -> Array[Vector2i]:
 		if c.y < 0 or c.y >= map_data.size(): continue
 		if c.x < 0 or c.x >= map_data[c.y].size(): continue
 
-		# Evitar moverse a una casilla ocupada
-		if units_by_cell.has(_city_key(c)): continue
-
 		out.append(c)
 	return out
 
@@ -701,28 +711,36 @@ func _clear_move_markers() -> void:
 
 func _show_move_markers(from_cell: Vector2i) -> void:
 	_clear_move_markers()
-	
+
 	var adj := _get_adjacent_cells(from_cell)
 
 	for c in adj:
-		var k := _city_key(c)
+		var key := _city_key(c)
+
 		var marker := Sprite2D.new()
-		marker.texture = MOVE_MARKER_TEXTURE
 		marker.position = _cell_center_local(c)
-		marker.modulate.a = 0.8
+		marker.modulate.a = 0.9
+		marker.z_index = c.y * 100 + c.x - 1
+		marker.centered = true
+
+		if units_by_cell.has(key):
+			var other: Unit = units_by_cell[key]
+
+			# Enemigo -> atacar
+			if other != null and selected_unit != null and other.owner_id != selected_unit.owner_id:
+				marker.texture = ATTACK_MARKER_TEXTURE
+				attack_targets.append(c)
+			else:
+				# aliado / ocupado
+				marker.texture = BUSSY_MARKER_TEXTURE
+		else:
+			# libre -> mover
+			marker.texture = MOVE_MARKER_TEXTURE
+			move_targets.append(c)
+
 		units_layer.add_child(marker)
 		move_markers.append(marker)
-	
-		if units_by_cell.has(k):
-			var other: Unit = units_by_cell[k]
-			# Enemigo marker rojo
-			if other != null and selected_unit != null and other.owner_id != selected_unit.owner_id:
-				attack_targets.append(c)
-				marker.modulate = Color()
-			else:
-				marker.modulate = Color()
-		else:
-			move_targets.append(c)
+
 
 func _enter_move_mode(u: Unit) -> void:
 	selected_unit = u
@@ -791,6 +809,58 @@ func request_move_unit(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	# OK -> sincronizamos a todos
 	rpc("sync_move_unit", from_cell, to_cell)
 
+func _request_attack_unit(attacker_cell: Vector2i, defender_cell: Vector2i) -> void:
+	if multiplayer.is_server():
+		request_attack_unit(attacker_cell, defender_cell)
+	else:
+		rpc_id(1, "request_attack_unit", attacker_cell, defender_cell)
+
+@rpc("any_peer")
+func request_attack_unit(attacker_cell: Vector2i, defender_cell: Vector2i) -> void:
+	if not multiplayer.is_server():
+		return
+
+	var sender := multiplayer.get_remote_sender_id()
+	if sender == 0:
+		sender = multiplayer.get_unique_id()
+
+	# Solo puede atacar el jugador del turno
+	if sender != current_player_id:
+		return
+
+	var atk_key := _city_key(attacker_cell)
+	var def_key := _city_key(defender_cell)
+
+	if not units_by_cell.has(atk_key):
+		return
+	if not units_by_cell.has(def_key):
+		return
+
+	var attacker: Unit = units_by_cell[atk_key]
+	var defender: Unit = units_by_cell[def_key]
+
+	if attacker == null or defender == null:
+		return
+
+	# El atacante debe ser suyo
+	if attacker.owner_id != sender:
+		return
+
+	# No puede atacarse a sí mismo
+	if defender.owner_id == sender:
+		return
+
+	# Debe ser adyacente
+	if not (defender_cell in _get_adjacent_cells(attacker_cell)):
+		return
+
+	# Aplicar daño
+	var new_hp := defender.hp - attacker.dmg
+
+	if new_hp <= 0:
+		rpc("sync_unit_dead", defender_cell)
+	else:
+		rpc("sync_unit_hp", defender_cell, new_hp)
 
 @rpc("any_peer", "call_local")
 func sync_move_unit(from_cell: Vector2i, to_cell: Vector2i) -> void:
@@ -800,3 +870,114 @@ func sync_move_unit(from_cell: Vector2i, to_cell: Vector2i) -> void:
 
 	var u: Unit = units_by_cell[from_key]
 	_move_unit_to_cell(u, to_cell)
+
+@rpc("any_peer", "call_local")
+func sync_unit_hp(cell: Vector2i, new_hp: int) -> void:
+	var key := _city_key(cell)
+	if not units_by_cell.has(key):
+		return
+
+	var u: Unit = units_by_cell[key]
+	if u == null:
+		return
+
+	u.set_hp(new_hp)
+
+@rpc("any_peer", "call_local")
+func sync_unit_dead(cell: Vector2i) -> void:
+	var key := _city_key(cell)
+	if not units_by_cell.has(key):
+		return
+
+	var u: Unit = units_by_cell[key]
+	units_by_cell.erase(key)
+
+	if u != null and is_instance_valid(u):
+		u.queue_free()
+
+func _server_process_city_captures() -> void:
+	# Solo host
+	if not multiplayer.is_server():
+		return
+
+	for city_cell in city_positions:
+		var key := _city_key(city_cell)
+
+		# Si por lo que sea no tiene dueño aún, saltar
+		if not city_owner_by_key.has(key):
+			continue
+
+		var owner := int(city_owner_by_key[key])
+
+		# Comprobar si hay una unidad encima 
+		if units_by_cell.has(key):
+			var u: Unit = units_by_cell[key]
+			if u == null:
+				city_capture_pending.erase(key)
+				continue
+
+			var occupier := int(u.owner_id)
+
+			# Si es enemigo: captura pendiente en 2 pasos
+			if occupier != owner:
+				# Si ya estaba pendiente por el mismo occupier -> CAPTURAR
+				if city_capture_pending.has(key) and int(city_capture_pending[key]) == occupier:
+					city_owner_by_key[key] = occupier
+					city_capture_pending.erase(key)
+
+					# Actualizar "ciudad principal" si no tenía
+					if not player_cities.has(occupier):
+						player_cities[occupier] = city_cell
+
+					print("CAPTURA: ", key, " ahora es de ", occupier)
+				else:
+					# Primera vez que lo ocupa -> marcar pendiente
+					city_capture_pending[key] = occupier
+			else:
+				# Es del dueño: cancelar cualquier captura pendiente
+				city_capture_pending.erase(key)
+		else:
+			# No hay unidad: cancelar captura pendiente
+			city_capture_pending.erase(key)
+
+	# Sincroniza dueños a todos
+	rpc("sync_city_owners", city_owner_by_key)
+
+@rpc("any_peer", "call_local")
+func sync_city_owners(remote: Dictionary) -> void:
+	city_owner_by_key = remote.duplicate(true)
+	_update_local_turn() # refresca HUD (ciudades)
+
+func _server_prune_eliminated_players() -> void:
+	if not multiplayer.is_server():
+		return
+
+	var alive: Array[int] = []
+	for pid in turn_order:
+		if _get_city_count_for_player(pid) > 0:
+			alive.append(pid)
+		else:
+			print("ELIMINADO: ", pid)
+
+	if alive.size() == turn_order.size():
+		return
+
+	turn_order = alive
+
+	if turn_order.is_empty():
+		return
+
+	# Si el jugador actual fue eliminado, fija un nuevo jugador actual válido
+	if not (current_player_id in turn_order):
+		current_turn_index = current_turn_index % turn_order.size()
+		current_player_id = turn_order[current_turn_index]
+	else:
+		current_turn_index = turn_order.find(current_player_id)
+
+	# Sincroniza a todos el nuevo orden y el turno actual
+	rpc("sync_turn_order", turn_order)
+	rpc("sync_turn", current_player_id, current_turn_index, round_number)
+
+@rpc("any_peer", "call_local")
+func sync_turn_order(remote_order: Array) -> void:
+	turn_order = remote_order.duplicate()
