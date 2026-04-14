@@ -83,6 +83,12 @@ var move_targets: Array[Vector2i] = []
 var move_markers: Array[Node2D] = []
 var attack_targets: Array[Vector2i] = []
 
+var eliminated_players:Dictionary = {}
+var game_over := false
+var winner_id: int = -1
+
+var end_screen: CanvasLayer = null
+
 func _ready() -> void:
 	randomize()
 	
@@ -450,6 +456,13 @@ func _focus_camera_on_my_city() -> void:
 	camera.position = world_pos
 
 func _unhandled_input(event: InputEvent) -> void:
+	if game_over:
+		return
+
+	var my_id := multiplayer.get_unique_id()
+	if eliminated_players.has(my_id):
+		return
+	
 	if not is_my_turn:
 		return
 
@@ -957,27 +970,94 @@ func _server_prune_eliminated_players() -> void:
 		if _get_city_count_for_player(pid) > 0:
 			alive.append(pid)
 		else:
-			print("ELIMINADO: ", pid)
-
-	if alive.size() == turn_order.size():
-		return
+			if not eliminated_players.has(pid):
+				eliminated_players[pid] = true
+				print("ELIMINADO: ", pid)
+				rpc("sync_player_eliminated", pid)
 
 	turn_order = alive
 
 	if turn_order.is_empty():
 		return
 
-	# Si el jugador actual fue eliminado, fija un nuevo jugador actual válido
+	if turn_order.size() == 1 and not game_over:
+		game_over = true
+		winner_id = int(turn_order[0])
+		rpc("sync_game_over", winner_id)
+		return
+
 	if not (current_player_id in turn_order):
 		current_turn_index = current_turn_index % turn_order.size()
 		current_player_id = turn_order[current_turn_index]
 	else:
 		current_turn_index = turn_order.find(current_player_id)
 
-	# Sincroniza a todos el nuevo orden y el turno actual
 	rpc("sync_turn_order", turn_order)
 	rpc("sync_turn", current_player_id, current_turn_index, round_number)
 
 @rpc("any_peer", "call_local")
 func sync_turn_order(remote_order: Array) -> void:
 	turn_order = remote_order.duplicate()
+
+@rpc("any_peer", "call_local")
+func sync_player_eliminated(pid: int) -> void:
+	eliminated_players[pid] = true
+	var my_id := multiplayer.get_unique_id()
+	if pid == my_id:
+		is_my_turn = false
+		_show_end_screen(false, true) 
+
+@rpc("any_peer", "call_local")
+func sync_game_over(winner: int) -> void:
+	game_over = true
+	winner_id = winner
+	var my_id := multiplayer.get_unique_id()
+	var i_win := (my_id == winner_id)
+	_show_end_screen(i_win, false)
+
+func _show_end_screen(victory: bool, eliminated: bool) -> void:
+	if end_screen != null and is_instance_valid(end_screen):
+		return
+
+	end_screen = CanvasLayer.new()
+	end_screen.layer = 100
+	add_child(end_screen)
+
+	var panel := ColorRect.new()
+	panel.color = Color(0, 0, 0, 0.75)
+	panel.anchor_left = 0
+	panel.anchor_top = 0
+	panel.anchor_right = 1
+	panel.anchor_bottom = 1
+	panel.offset_left = 0
+	panel.offset_top = 0
+	panel.offset_right = 0
+	panel.offset_bottom = 0
+	end_screen.add_child(panel)
+
+	var label := Label.new()
+	label.anchor_left = 0.5
+	label.anchor_top = 0.5
+	label.anchor_right = 0.5
+	label.anchor_bottom = 0.5
+	label.offset_left = -250
+	label.offset_top = -60
+	label.offset_right = 250
+	label.offset_bottom = 60
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	if eliminated:
+		label.text = "ELIMINADO\nEstás observando la partida"
+	elif victory:
+		label.text = "VICTORIA"
+	else:
+		label.text = "DERROTA"
+
+	# un poco de estilo
+	label.add_theme_font_size_override("font_size", 36)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 6)
+
+	panel.add_child(label)
