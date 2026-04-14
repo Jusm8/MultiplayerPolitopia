@@ -1,0 +1,54 @@
+[gd_scene load_steps=14 format=3 uid="uid://cuv3wt6wrk1gd"]
+
+[ext_resource type="Script" uid="uid://b63sk50e5dxjs" path="res://script/mapa.gd" id="1_nhjw5"]
+[ext_resource type="Texture2D" uid="uid://c7shwkold5npr" path="res://assets/mapaImg/Bosque.png" id="3_10ars"]
+[ext_resource type="Texture2D" uid="uid://doibhahekq8tt" path="res://assets/mapaImg/Campo.png" id="4_7pudt"]
+[ext_resource type="Texture2D" uid="uid://d0hv4aheia3uo" path="res://assets/mapaImg/Ciudad.png" id="5_10ars"]
+[ext_resource type="Texture2D" uid="uid://du7a43y8vb4p2" path="res://assets/mapaImg/Agua.png" id="5_npqkg"]
+[ext_resource type="Texture2D" uid="uid://14gopl38oc7h" path="res://assets/mapaImg/Montania.png" id="6_r2pf6"]
+[ext_resource type="Script" uid="uid://cg77nl5xilu14" path="res://script/camera.gd" id="7_10ars"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7pudt"]
+texture = ExtResource("4_7pudt")
+texture_region_size = Vector2i(64, 32)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_10ars"]
+texture = ExtResource("3_10ars")
+texture_region_size = Vector2i(64, 32)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_r2pf6"]
+texture = ExtResource("6_r2pf6")
+texture_region_size = Vector2i(64, 32)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_npqkg"]
+texture = ExtResource("5_npqkg")
+texture_region_size = Vector2i(64, 32)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8ec4r"]
+texture = ExtResource("5_10ars")
+texture_region_size = Vector2i(64, 32)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_f52q7"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+sources/0 = SubResource("TileSetAtlasSource_7pudt")
+sources/1 = SubResource("TileSetAtlasSource_10ars")
+sources/2 = SubResource("TileSetAtlasSource_r2pf6")
+sources/3 = SubResource("TileSetAtlasSource_npqkg")
+sources/4 = SubResource("TileSetAtlasSource_8ec4r")
+
+[node name="mapa" type="Node2D"]
+script = ExtResource("1_nhjw5")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_f52q7")
+format = 2
+
+[node name="Camera" type="Camera2D" parent="."]
+script = ExtResource("7_10ars")

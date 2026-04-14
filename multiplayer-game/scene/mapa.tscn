@@ -1,0 +1,111 @@
+[gd_scene load_steps=9 format=3 uid="uid://cuv3wt6wrk1gd"]
+
+[ext_resource type="Script" uid="uid://b63sk50e5dxjs" path="res://script/mapa.gd" id="1_nhjw5"]
+[ext_resource type="Texture2D" uid="uid://3emj43qiujyt" path="res://assets/mapaImg/TileMapMultiplayer.png" id="2_7pudt"]
+[ext_resource type="Script" uid="uid://cg77nl5xilu14" path="res://script/camera.gd" id="7_10ars"]
+[ext_resource type="Script" uid="uid://20l5svnbesmy" path="res://script/hud.gd" id="8_r2pf6"]
+[ext_resource type="Texture2D" uid="uid://b4vskhtyxw33g" path="res://icon.svg" id="9_npqkg"]
+[ext_resource type="PackedScene" uid="uid://3abew6xy87gd" path="res://scene/CityMenu.tscn" id="10_8ec4r"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_10ars"]
+texture = ExtResource("2_7pudt")
+texture_region_size = Vector2i(32, 32)
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_f52q7"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(32, 32)
+sources/1 = SubResource("TileSetAtlasSource_10ars")
+
+[node name="mapa" type="Node2D"]
+script = ExtResource("1_nhjw5")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_f52q7")
+format = 2
+layer_1/name = "Unit_Layer"
+
+[node name="UnitsLayer" type="Node2D" parent="TileMap"]
+z_index = 10
+
+[node name="Camera" type="Camera2D" parent="."]
+position = Vector2(640, 360)
+script = ExtResource("7_10ars")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("8_r2pf6")
+
+[node name="CityMenu" parent="HUD" instance=ExtResource("10_8ec4r")]
+
+[node name="TopBar" type="Panel" parent="HUD"]
+offset_right = 1280.0
+offset_bottom = 136.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/TopBar"]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 8.0
+offset_right = 824.0
+offset_bottom = 72.0
+
+[node name="LabelCurrentPlayer" type="Label" parent="HUD/TopBar/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/TopBar/VBoxContainer"]
+layout_mode = 2
+
+[node name="LabelCities" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelWood" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelStone" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelRound" type="Label" parent="HUD/TopBar/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="HUD/TopBar"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HUD/TopBar/PanelContainer"]
+layout_mode = 2
+
+[node name="LabelTitleInfo" type="Label" parent="HUD/TopBar/PanelContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="ActionsContainer" type="HBoxContainer" parent="HUD/TopBar/PanelContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="EndTurnBtn" type="Button" parent="HUD/TopBar"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.88125
+anchor_top = 4.1764708
+anchor_right = 0.98125
+anchor_bottom = 5.117647
+offset_right = 8.0
+offset_bottom = 8.0
+icon = ExtResource("9_npqkg")
+metadata/_edit_use_anchors_ = true
+
+[node name="ConfirmEndTurnDialog" type="ConfirmationDialog" parent="HUD/TopBar"]
+
+[node name="LabelMessage" type="Label" parent="HUD/TopBar"]
+visible = false
+layout_mode = 0
+offset_left = 600.0
+offset_top = 96.0
+offset_right = 640.0
+offset_bottom = 119.0
+
+[node name="MsgTimer" type="Timer" parent="HUD/TopBar"]

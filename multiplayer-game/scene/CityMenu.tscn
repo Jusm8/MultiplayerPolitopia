@@ -1,0 +1,144 @@
+[gd_scene load_steps=5 format=3 uid="uid://3abew6xy87gd"]
+
+[ext_resource type="Script" uid="uid://c5w7qmskabhu" path="res://script/city_menu.gd" id="1_yr66a"]
+[ext_resource type="Texture2D" uid="uid://b4vskhtyxw33g" path="res://icon.svg" id="2_amciv"]
+
+[sub_resource type="Theme" id="Theme_yr66a"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yr66a"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.047058824, 0.21960784, 0.32156864, 0.4117647)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="CityMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+size_flags_horizontal = 4
+script = ExtResource("1_yr66a")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 736.0
+offset_top = 64.0
+offset_right = 1216.0
+offset_bottom = 640.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_yr66a")
+theme_override_styles/panel = SubResource("StyleBoxFlat_yr66a")
+
+[node name="HBox" type="HBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -130.0
+offset_right = 364.0
+offset_bottom = 130.0
+grow_vertical = 2
+
+[node name="UnitGrid" type="GridContainer" parent="Panel/HBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 2
+
+[node name="Soldado" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "Soldado
+"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="General" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "General
+"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="Arquero" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "Arquero"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="Tanque" type="TextureButton" parent="Panel/HBox/UnitGrid"]
+layout_mode = 2
+tooltip_text = "Tanque"
+texture_normal = ExtResource("2_amciv")
+texture_pressed = ExtResource("2_amciv")
+texture_hover = ExtResource("2_amciv")
+texture_disabled = ExtResource("2_amciv")
+texture_focused = ExtResource("2_amciv")
+
+[node name="Info" type="VBoxContainer" parent="Panel/HBox"]
+custom_minimum_size = Vector2(100, 250)
+layout_mode = 2
+
+[node name="LabelName" type="Label" parent="Panel/HBox/Info"]
+layout_mode = 2
+
+[node name="LabelStats" type="Label" parent="Panel/HBox/Info"]
+layout_mode = 2
+
+[node name="LabelDesc" type="Label" parent="Panel/HBox/Info"]
+layout_mode = 2
+
+[node name="LabelCost" type="Label" parent="Panel/HBox/Info"]
+layout_mode = 2
+
+[node name="BottomBar" type="HBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -152.0
+offset_top = -86.0
+offset_right = 152.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="BtnClose" type="Button" parent="Panel/BottomBar"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7490196, 0, 0.21568628, 1)
+theme_override_font_sizes/font_size = 32
+text = "Close
+"
+
+[node name="BtnBuy" type="Button" parent="Panel/BottomBar"]
+custom_minimum_size = Vector2(150, 0)
+layout_direction = 3
+layout_mode = 2
+theme_override_colors/font_color = Color(0.19815946, 0.5357092, 0.31466636, 1)
+theme_override_colors/font_focus_color = Color(0.5678726, 0.09500661, 0.58928937, 1)
+theme_override_font_sizes/font_size = 32
+text = "BUY"
+
+[node name="Centrado" type="Button" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 568.0
+offset_top = 312.0
+offset_right = 584.0
+offset_bottom = 328.0
