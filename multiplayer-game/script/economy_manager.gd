@@ -1,5 +1,3 @@
-## economy_manager.gd
-## Sistema de economía: recursos por jugador e ingresos al final de turno.
 extends Node
 
 signal resources_updated(player_id: int)

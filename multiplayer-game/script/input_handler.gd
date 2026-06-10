@@ -1,5 +1,3 @@
-## input_handler.gd
-## Captura el input del jugador y delega en los sistemas correspondientes.
 extends Node
 
 var map: Node = null

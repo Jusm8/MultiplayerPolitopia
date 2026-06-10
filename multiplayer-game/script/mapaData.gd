@@ -1,7 +1,3 @@
-## MapData.gd
-## Clase global con enums, constantes y utilidades compartidas.
-## NO necesita Autoload: basta con tenerla en el proyecto para que
-## "MapData.Terrain.CAMPO" funcione desde cualquier script.
 class_name MapData
 extends Node
 
@@ -13,7 +9,7 @@ enum Terrain {
 	MONTANIA,
 }
 
-const GRID_SIZE       := 16
+const GRID_SIZE       := 30
 const ATLAS_SOURCE_ID := 0
 
 const TERRAIN_ATLAS: Dictionary = {

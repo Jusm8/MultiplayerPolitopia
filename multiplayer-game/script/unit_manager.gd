@@ -1,5 +1,3 @@
-## unit_manager.gd
-## Sistema de unidades: spawn, movimiento, combate y marcadores visuales.
 extends Node
 
 signal unit_moved(from_cell: Vector2i, to_cell: Vector2i)

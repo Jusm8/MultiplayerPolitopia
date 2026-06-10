@@ -1,5 +1,3 @@
-## mapa.gd
-## Coordinador de la escena de juego.
 extends Node2D
 
 # ---------------------------------------------------------------------------
