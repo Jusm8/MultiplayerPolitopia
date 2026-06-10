@@ -1,11 +1,16 @@
-[gd_scene load_steps=9 format=3 uid="uid://cuv3wt6wrk1gd"]
+[gd_scene load_steps=14 format=3 uid="uid://cuv3wt6wrk1gd"]
 
 [ext_resource type="Script" uid="uid://b63sk50e5dxjs" path="res://script/mapa.gd" id="1_nhjw5"]
 [ext_resource type="Texture2D" uid="uid://3emj43qiujyt" path="res://assets/mapaImg/TileMapMultiplayer.png" id="2_7pudt"]
 [ext_resource type="Script" uid="uid://cg77nl5xilu14" path="res://script/camera.gd" id="7_10ars"]
+[ext_resource type="Script" uid="uid://cd7tgb51mhn14" path="res://script/turn_manager.gd" id="7_ynpjg"]
+[ext_resource type="Script" uid="uid://dy5mwmv7qjwjn" path="res://script/economy_manager.gd" id="8_88gl1"]
 [ext_resource type="Script" uid="uid://20l5svnbesmy" path="res://script/hud.gd" id="8_r2pf6"]
 [ext_resource type="Texture2D" uid="uid://b4vskhtyxw33g" path="res://icon.svg" id="9_npqkg"]
+[ext_resource type="Script" uid="uid://81xexurf7uv4" path="res://script/unit_manager.gd" id="9_p7vuk"]
+[ext_resource type="Script" uid="uid://bhqbe0vokoq66" path="res://script/city_manager.gd" id="10_6u765"]
 [ext_resource type="PackedScene" uid="uid://3abew6xy87gd" path="res://scene/CityMenu.tscn" id="10_8ec4r"]
+[ext_resource type="Script" uid="uid://cuws8nfnx04gj" path="res://script/input_handler.gd" id="11_uj6bn"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_10ars"]
 texture = ExtResource("2_7pudt")
@@ -109,3 +114,18 @@ offset_right = 640.0
 offset_bottom = 119.0
 
 [node name="MsgTimer" type="Timer" parent="HUD/TopBar"]
+
+[node name="TurnManager" type="Node" parent="."]
+script = ExtResource("7_ynpjg")
+
+[node name="EconomyManager" type="Node" parent="."]
+script = ExtResource("8_88gl1")
+
+[node name="UnitManager" type="Node" parent="."]
+script = ExtResource("9_p7vuk")
+
+[node name="CityManager" type="Node" parent="."]
+script = ExtResource("10_6u765")
+
+[node name="InputHandler" type="Node" parent="."]
+script = ExtResource("11_uj6bn")
