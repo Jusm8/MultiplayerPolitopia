@@ -69,6 +69,27 @@ text = "Jugadores en sala"
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
+[node name="SeedContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Seed" type="Label" parent="VBoxContainer/SeedContainer"]
+layout_mode = 2
+text = "Semilla"
+
+[node name="SeedInput" type="LineEdit" parent="VBoxContainer/SeedContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+placeholder_text = "Alatoria"
+
+[node name="RandomBtn" type="Button" parent="VBoxContainer/SeedContainer"]
+clip_contents = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "🎲"
+
+[node name="SeedDisplay" type="Label" parent="VBoxContainer/SeedContainer"]
+layout_mode = 2
+
 [node name="Start_btn" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Empezar Partida"

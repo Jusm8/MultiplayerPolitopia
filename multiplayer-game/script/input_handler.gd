@@ -1,3 +1,5 @@
+## input_handler.gd
+## Captura el input del jugador y delega en los sistemas correspondientes.
 extends Node
 
 var map: Node = null
@@ -39,5 +41,5 @@ func _handle_left_click() -> void:
 	var terrain: int = map.get_terrain_at(cell)
 	map.hud.set_selected_tile(cell, terrain)
 
-	if terrain == MapData.Terrain.CIUDAD:
+	if terrain == MapData.Terrain.VILLA:
 		map.city_manager.try_open_city_menu(cell)

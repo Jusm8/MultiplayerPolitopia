@@ -91,7 +91,7 @@ func request_buy_unit(city_cell: Vector2i, unit_id: int) -> void:
 		rpc_id(sender, "_client_show_error", "No es tu turno")
 		return
 
-	if map.get_terrain_at(city_cell) != MapData.Terrain.CIUDAD:
+	if map.get_terrain_at(city_cell) != MapData.Terrain.VILLA:
 		return
 
 	var key: String = MapData.cell_key(city_cell)
