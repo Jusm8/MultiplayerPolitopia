@@ -17,7 +17,6 @@ corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
 [node name="CityMenu" type="Control"]
-visible = false
 layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 4
@@ -28,7 +27,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 64.0
+offset_left = 736.0
 offset_top = 64.0
 offset_right = 1216.0
 offset_bottom = 640.0
@@ -38,14 +37,18 @@ theme = SubResource("Theme_yr66a")
 theme_override_styles/panel = SubResource("StyleBoxFlat_yr66a")
 
 [node name="HBox" type="HBoxContainer" parent="Panel"]
-layout_mode = 0
-offset_left = 448.0
-offset_top = 136.0
-offset_right = 780.0
-offset_bottom = 396.0
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -130.0
+offset_right = 364.0
+offset_bottom = 130.0
+grow_vertical = 2
 
 [node name="UnitGrid" type="GridContainer" parent="Panel/HBox"]
 layout_mode = 2
+size_flags_horizontal = 4
 columns = 2
 
 [node name="Soldado" type="TextureButton" parent="Panel/HBox/UnitGrid"]
